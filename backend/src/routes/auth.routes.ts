@@ -2,6 +2,7 @@ import { Router } from "express";
 import { loginWithPassword, loginWithApiKey } from "../auth/erpnextAuth";
 import { requireAuth, AuthedRequest } from "../auth/middleware";
 import { sessionStore } from "../core/sessionStore";
+import { syncNowForSession } from "../core/erpnextNotificationSync";
 
 const router = Router();
 
@@ -22,6 +23,11 @@ router.post("/login", async (req, res) => {
       : null;
 
     if (!result) return res.status(400).json({ error: "Provide either password, or apiKey + apiSecret" });
+
+    // Fire-and-forget: a freshly-signed-in user shouldn't wait for the
+    // background poll's next tick to see assignments that already
+    // existed before they logged in.
+    syncNowForSession(result.session);
 
     res.json({ token: result.token, roles: result.session.erpnext_roles, allowed_tools: result.session.allowed_tools });
   } catch (err: any) {

@@ -9,6 +9,7 @@ import { MANUFACTURING_MAP } from "./entityMaps/manufacturing";
 import { PROJECTS_MAP } from "./entityMaps/projects";
 import { ASSETS_MAP } from "./entityMaps/assets";
 import { QUALITY_MAP } from "./entityMaps/quality";
+import { NOTIFICATIONS_MAP } from "./entityMaps/notifications";
 
 export type { ErpNextEntityMapping };
 
@@ -38,6 +39,7 @@ export const ERPNEXT_ENTITY_MAP: Record<string, ErpNextEntityMapping> = {
   ...PROJECTS_MAP,
   ...ASSETS_MAP,
   ...QUALITY_MAP,
+  ...NOTIFICATIONS_MAP,
 };
 
 /** Reverse of ERPNEXT_ENTITY_MAP's entityKey -> doctype, e.g. "Lead" ->

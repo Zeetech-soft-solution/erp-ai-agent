@@ -9,8 +9,10 @@ import agentRoutes from "./routes/agent.routes";
 import adminRoutes from "./routes/admin.routes";
 import policyDocumentsRoutes from "./routes/policyDocuments.routes";
 import webhooksRoutes from "./routes/webhooks.routes";
+import { startErpnextNotificationPoll } from "./core/erpnextNotificationSync";
 
 bootstrapModules();
+startErpnextNotificationPoll(10000);
 
 const app = express();
 app.use(cors());

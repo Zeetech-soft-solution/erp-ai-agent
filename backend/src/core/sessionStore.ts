@@ -53,6 +53,19 @@ class SessionStore {
       if (entry.session.sub === userEmail) this.store.delete(id);
     }
   }
+
+  /** One session per currently-logged-in user (dedupes multiple tabs/
+   *  logins by the same person) — used by core/erpnextNotificationSync.ts
+   *  so the background poll only ever calls out for people actually using
+   *  the agent right now, never the full user directory. */
+  getActiveSessions(): Session[] {
+    const now = Date.now();
+    const byUser = new Map<string, Session>();
+    for (const entry of this.store.values()) {
+      if (entry.expiresAt > now) byUser.set(entry.session.sub, entry.session);
+    }
+    return Array.from(byUser.values());
+  }
 }
 
 export const sessionStore = new SessionStore();
