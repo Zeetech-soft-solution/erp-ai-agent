@@ -109,6 +109,14 @@ body {
 }
 .side-rail-link:hover { background: var(--bg-page); }
 .side-rail-link.active { background: var(--accent-bg); color: var(--accent); }
+.side-rail-link-primary { font-weight: 600; color: var(--ink); }
+.side-rail-divider { height: 1px; background: var(--border); margin: 8px 4px 10px; }
+.side-rail-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.side-rail-badge {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: white; background: var(--alert);
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
 .agent-shell-main { flex: 1; min-width: 0; overflow: hidden; height: 100%; }
 
 .agent-body { display: grid; grid-template-columns: 1fr; overflow: hidden; height: 100%; min-height: 0; }

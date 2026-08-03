@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { api } from "../api/client";
+import { notificationsService } from "../services/notificationsService";
 
 const WORKFLOW_TABS = [
   { to: "/notifications", label: "Notifications" },
@@ -7,6 +9,8 @@ const WORKFLOW_TABS = [
   { to: "/support", label: "Support" },
   { to: "/projects", label: "Projects" },
 ];
+
+const UNREAD_POLL_MS = 15000;
 
 // Zeetech's "Z" logomark (see zeetech-website/assets/icon-master.svg) -
 // inlined so the header needs no extra network request and scales cleanly
@@ -35,6 +39,26 @@ function BrandMark() {
  * the content area's border instead of the top nav - they're feeds that
  * hand work back to Chat, not peers of it. Sign out stays top-right. */
 export function Layout() {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Polled here, not just inside <Notifications/>, so the rail badge shows
+  // an arrived alert even while looking at Chat/Email/Support/Projects -
+  // the same 15s cadence as the Notifications tab's own poll. The count
+  // only ever falls when the user actually reads/acts on something (see
+  // notificationsService.markRead, called from the "View details" next
+  // step) - never just from time passing or switching tabs.
+  useEffect(() => {
+    let cancelled = false;
+    function loadUnread() {
+      notificationsService.history().then((items) => {
+        if (!cancelled) setUnreadCount(items.filter((n) => !n.read).length);
+      }).catch(() => {});
+    }
+    loadUnread();
+    const interval = setInterval(loadUnread, UNREAD_POLL_MS);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
   return (
     <div className="agent-shell">
       <header className="agent-header">
@@ -51,9 +75,14 @@ export function Layout() {
       </header>
       <div className="agent-shell-body">
         <nav className="side-rail">
+          <NavLink to="/chat" className={({ isActive }) => `side-rail-link side-rail-link-primary${isActive ? " active" : ""}`}>
+            Zyte Chat
+          </NavLink>
+          <div className="side-rail-divider" />
           {WORKFLOW_TABS.map((t) => (
             <NavLink key={t.to} to={t.to} className={({ isActive }) => `side-rail-link${isActive ? " active" : ""}`}>
               {t.label}
+              {t.to === "/notifications" && unreadCount > 0 && <span className="side-rail-badge">{unreadCount}</span>}
             </NavLink>
           ))}
         </nav>
