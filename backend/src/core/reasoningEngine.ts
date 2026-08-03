@@ -11,7 +11,14 @@ When your final answer includes structured data (a list, a comparison, a summary
 of records), end your reply with a single JSON line prefixed EXACTLY with
 "DISPLAY_INTENT:" describing how it should be shown, e.g.
 DISPLAY_INTENT: {"render":"table","highlight":[],"next_steps":["Mark as won"]}
-If no structured data is involved, omit the DISPLAY_INTENT line entirely.`;
+The same applies when you've proposed something that needs the user's explicit
+confirmation before a further action makes it real (e.g. you drafted a reply
+and a separate send tool exists, or a status change needs approval) — even
+with nothing tabular to show, still end with a DISPLAY_INTENT line using
+"render":"none" so the user gets a clickable confirm button instead of having
+to retype their answer, e.g.
+DISPLAY_INTENT: {"render":"none","next_steps":["Send this email"]}
+If nothing needs a next click, omit the DISPLAY_INTENT line entirely.`;
 
 export class ReasoningEngine {
   constructor(

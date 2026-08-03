@@ -35,6 +35,7 @@ export const api = {
     request(`/api/agent/notifications${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   markNotificationRead: (id: string) => request(`/api/agent/notifications/${id}/read`, { method: "POST" }),
   sentEmails: () => request("/api/agent/sent-emails"),
+  workflowActions: (module: string) => request(`/api/agent/workflow-actions?module=${encodeURIComponent(module)}`),
   setToken: (token: string) => localStorage.setItem("erp_agent_token", token),
   clearToken: () => localStorage.removeItem("erp_agent_token"),
   isLoggedIn: () => !!getToken(),

@@ -1,4 +1,5 @@
-import { ProjectIssue } from "./types";
+import { api } from "../api/client";
+import { ProjectIssue, IssueComment } from "./types";
 
 /** Sample data for now - no backend call yet. Swap point: replace `list()`/
  *  `advance()` with real requests once wired to the `project`/`task`
@@ -63,6 +64,18 @@ const NEXT_STATUS: Record<ProjectIssue["status"], ProjectIssue["status"]> = {
 
 export const projectsService = {
   list: (): Promise<ProjectIssue[]> => delay([...SAMPLE]),
+  // Real, not sample: comments actually posted via the project.comment
+  // tool (see backend routes/agent.routes.ts GET /workflow-actions,
+  // modules/projects/index.ts), keyed by issue key so Projects.tsx can
+  // merge them into each issue's comment list.
+  realComments: async (): Promise<Record<string, IssueComment[]>> => {
+    const { actions } = await api.workflowActions("project_issue");
+    const byIssue: Record<string, IssueComment[]> = {};
+    for (const a of actions as { recordKey: string; detail: string; createdAt: string }[]) {
+      (byIssue[a.recordKey] ??= []).push({ author: "You", text: a.detail, at: a.createdAt });
+    }
+    return byIssue;
+  },
   /** Advances the issue to its next status and appends an automatic status comment. */
   advance: (id: string): Promise<ProjectIssue> => {
     SAMPLE = SAMPLE.map((p) => {

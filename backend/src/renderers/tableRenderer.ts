@@ -1,4 +1,4 @@
-import { rendererRegistry } from "../core/rendererRegistry";
+import { rendererRegistry, renderNextSteps } from "../core/rendererRegistry";
 import { DisplayIntent } from "../core/types";
 import { escapeHtml } from "./escape";
 
@@ -22,14 +22,10 @@ function renderTable(data: any, intent: DisplayIntent): string {
     })
     .join("");
 
-  const nextSteps = (intent.next_steps || [])
-    .map((s) => `<button class="erp-agent-next-step" data-action="${escapeHtml(s)}">${escapeHtml(s)}</button>`)
-    .join("");
-
   return `
 <div class="erp-agent-report">
   <table class="erp-agent-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
-  ${nextSteps ? `<div class="erp-agent-next-steps">${nextSteps}</div>` : ""}
+  ${renderNextSteps(intent)}
 </div>`.trim();
 }
 

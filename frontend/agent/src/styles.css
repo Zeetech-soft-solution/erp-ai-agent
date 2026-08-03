@@ -70,33 +70,46 @@ body {
 /* ---- App shell: responsive at 900px ---- */
 .agent-shell {
   height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
 }
 .agent-header {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-surface);
+  flex-shrink: 0;
 }
-.agent-header .brand { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
-.agent-header .brand span { color: var(--accent); }
+.brand-link {
+  display: flex; align-items: center; gap: 9px; text-decoration: none; color: inherit;
+  padding: 4px 6px; border-radius: 8px; transition: background 0.15s;
+}
+.brand-link:hover { background: var(--bg-page); }
+.brand-mark { border-radius: 6px; flex-shrink: 0; }
+.brand { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+.brand span { color: var(--accent); }
 .agent-header .role-tag {
   font-family: var(--font-mono); font-size: 11px; color: var(--ink-secondary);
   background: var(--accent-bg); padding: 3px 8px; border-radius: 999px;
 }
-.tab-nav-primary { display: flex; gap: 2px; margin-left: 8px; }
-.tab-nav-secondary { display: flex; gap: 2px; margin-left: auto; }
-.tab-nav-link {
-  font-size: 13px; font-weight: 500; color: var(--ink-secondary); text-decoration: none;
-  padding: 6px 12px; border-radius: 999px; transition: background 0.15s, color 0.15s;
-}
-.tab-nav-link:hover { background: var(--bg-page); }
-.tab-nav-link.active { background: var(--accent-bg); color: var(--accent); }
-.tab-nav-primary .tab-nav-link { font-weight: 600; }
 .sign-out-btn {
   background: none; border: none; color: var(--ink-secondary); font-size: 12px; cursor: pointer;
-  margin-left: 16px;
+  margin-left: auto;
 }
+
+/* Workflow tabs (Notifications/Email/Support/Projects) live in a rail
+   against the content area's left border - feeds that hand work back to
+   Chat, not top-nav peers of it. */
+.agent-shell-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+.side-rail {
+  width: 168px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--bg-surface);
+  padding: 14px 10px; display: flex; flex-direction: column; gap: 2px;
+}
+.side-rail-link {
+  font-size: 13px; font-weight: 500; color: var(--ink-secondary); text-decoration: none;
+  padding: 8px 12px; border-radius: 8px; transition: background 0.15s, color 0.15s;
+}
+.side-rail-link:hover { background: var(--bg-page); }
+.side-rail-link.active { background: var(--accent-bg); color: var(--accent); }
+.agent-shell-main { flex: 1; min-width: 0; overflow: hidden; height: 100%; }
 
 .agent-body { display: grid; grid-template-columns: 1fr; overflow: hidden; height: 100%; min-height: 0; }
 
@@ -282,3 +295,12 @@ body {
 .comment-author { font-weight: 600; color: var(--ink); }
 .comment-time { color: var(--ink-muted); margin-left: auto; }
 .issue-card-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.issue-status-bar {
+  display: flex; align-items: center; gap: 6px; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border); cursor: pointer; font-size: 11px; color: var(--ink-muted);
+}
+.issue-comment-count {
+  font-family: var(--font-mono); font-size: 10px; color: var(--accent); background: var(--accent-bg);
+  padding: 1px 6px; border-radius: 999px; flex-shrink: 0;
+}
+.issue-latest-comment { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

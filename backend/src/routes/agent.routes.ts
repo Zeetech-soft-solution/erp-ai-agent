@@ -10,6 +10,7 @@ import { listAllowedTools } from "../core/gateway";
 import { asyncHandler } from "../core/asyncHandler";
 import { alertStore } from "../core/alertStore";
 import { mailboxConnector } from "../providers/mail/stubMailboxConnector";
+import { workflowActionStore } from "../core/workflowActionStore";
 
 const interactionLogger = new PostgresInteractionLogger();
 const engine = new ReasoningEngine(
@@ -61,6 +62,15 @@ router.post("/notifications/:id/read", asyncHandler(async (req: AuthedRequest, r
 router.get("/sent-emails", asyncHandler(async (req: AuthedRequest, res) => {
   const emails = await mailboxConnector.listSent(req.session!.sub);
   res.json({ emails });
+}));
+
+// What tickets.resolve / project.comment have actually recorded for this
+// user - e.g. ?module=project reads back real comments so Projects can
+// show them next to (or instead of) the sample data's canned ones.
+router.get("/workflow-actions", asyncHandler(async (req: AuthedRequest, res) => {
+  const module = typeof req.query.module === "string" ? req.query.module : undefined;
+  const actions = await workflowActionStore.list(req.session!.sub, module);
+  res.json({ actions });
 }));
 
 router.get("/capabilities", (req: AuthedRequest, res) => {

@@ -97,7 +97,7 @@ export interface LLMProvider {
 export type AgentResponseType = "text" | "report" | "document" | "action_result";
 
 export interface DisplayIntent {
-  render: "table" | "chart" | "cards" | "timeline" | "raw";
+  render: "table" | "chart" | "cards" | "timeline" | "raw" | "none";
   highlight?: string[];
   next_steps?: string[];
 }

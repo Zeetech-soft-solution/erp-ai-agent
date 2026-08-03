@@ -4,6 +4,7 @@ import { crmModule } from "./modules/crm";
 import { contextModule } from "./modules/context";
 import { ticketsModule } from "./modules/tickets";
 import { emailModule } from "./modules/email";
+import { projectsModule } from "./modules/projects";
 import { buildEntityModules } from "./core/entityModuleFactory";
 import { ENTITY_CONFIGS } from "./config/entities.config";
 import { buildWorkflowModules } from "./core/workflowToolFactory";
@@ -30,6 +31,7 @@ const AVAILABLE_MODULES: Record<string, any> = {
   context: contextModule,
   tickets: ticketsModule,
   email: emailModule,
+  project_issue: projectsModule,
 };
 
 // Shared with core/policyDocumentStore.ts so admin-uploaded policy
