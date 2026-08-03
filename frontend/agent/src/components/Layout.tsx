@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { api } from "../api/client";
 import { notificationsService } from "../services/notificationsService";
+import { DetailPanel } from "./DetailPanel";
 
 const WORKFLOW_TABS = [
   { to: "/notifications", label: "Notifications" },
@@ -89,6 +90,7 @@ export function Layout() {
         <div className="agent-shell-main">
           <Outlet />
         </div>
+        <DetailPanel />
       </div>
     </div>
   );

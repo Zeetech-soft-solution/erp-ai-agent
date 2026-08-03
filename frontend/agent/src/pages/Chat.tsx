@@ -3,15 +3,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { ChatTurn } from "../api/types";
 import { ResponseView } from "../components/ResponseView";
-import { DetailPanel } from "../components/DetailPanel";
 import { Composer } from "../components/Composer";
 
 /**
- * This is the core screen: login lands here. One component tree serves
- * both mobile and desktop — the detail panel simply doesn't render
- * (display: none) below 900px via CSS, rather than being a separate
- * code path. That's the "same site initializes mobile and desktop"
- * requirement from the brief.
+ * This is the core screen: login lands here. The capabilities panel
+ * ("What I can help with") used to live inside this component, but now
+ * renders once in Layout.tsx alongside every tab (not just Chat) so it
+ * doesn't disappear when switching to Notifications/Email/Support/
+ * Projects - see Layout.tsx for why.
  *
  * Proactive alerts (an ERPNext webhook - see routes/webhooks.routes.ts)
  * used to be polled from here and dropped into the thread inline. That
@@ -68,33 +67,29 @@ export function Chat() {
   }
 
   return (
-    <div className="agent-body">
-      <div className="chat-column">
-        <div className="message-list">
-          {!turns.length && (
-            <div className="bubble-agent">
-              Ask me about leads, opportunities, orders, or anything else your role has access to.
+    <div className="chat-column">
+      <div className="message-list">
+        {!turns.length && (
+          <div className="bubble-agent">
+            Ask me about leads, opportunities, orders, or anything else your role has access to.
+          </div>
+        )}
+        {turns.map((t) => (
+          <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="turn">
+              <div className="bubble-user">{t.silent ? "Sending details…" : t.prompt}</div>
             </div>
-          )}
-          {turns.map((t) => (
-            <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div className="turn">
-                <div className="bubble-user">{t.silent ? "Sending details…" : t.prompt}</div>
-              </div>
-              <div className="turn">
-                {t.pending ? (
-                  <div className="bubble-agent pending">Thinking…</div>
-                ) : (
-                  t.response && <ResponseView response={t.response} onNextStep={send} />
-                )}
-              </div>
+            <div className="turn">
+              {t.pending ? (
+                <div className="bubble-agent pending">Thinking…</div>
+              ) : (
+                t.response && <ResponseView response={t.response} onNextStep={send} />
+              )}
             </div>
-          ))}
-        </div>
-        <Composer onSend={send} disabled={sending} />
+          </div>
+        ))}
       </div>
-
-      <DetailPanel />
+      <Composer onSend={send} disabled={sending} />
     </div>
   );
 }
