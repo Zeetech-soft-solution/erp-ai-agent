@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import { Alert, ChatTurn } from "../api/types";
+import { ChatTurn } from "../api/types";
 import { ResponseView } from "../components/ResponseView";
 import { DetailPanel } from "../components/DetailPanel";
 import { Composer } from "../components/Composer";
@@ -12,40 +12,19 @@ import { Composer } from "../components/Composer";
  * (display: none) below 900px via CSS, rather than being a separate
  * code path. That's the "same site initializes mobile and desktop"
  * requirement from the brief.
+ *
+ * Proactive alerts (an ERPNext webhook - see routes/webhooks.routes.ts)
+ * used to be polled from here and dropped into the thread inline. That
+ * moved to the Notifications tab (services/notificationsService.ts) since
+ * the alerts endpoint drains its queue on every call - two independent
+ * pollers would race and steal each other's alerts. Chat no longer touches
+ * that endpoint at all.
  */
-function alertToTurn(alert: Alert): ChatTurn {
-  return {
-    id: alert.id,
-    prompt: "",
-    isAlert: true,
-    response: { type: "text", message: alert.message, meta: { modules_used: [], tools_used: [], role_context: [] } },
-  };
-}
-
 export function Chat() {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [sending, setSending] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Polls for proactive alerts (an ERPNext webhook today — see
-  // routes/webhooks.routes.ts) since chat is otherwise pure request/
-  // response with nothing pushing into an already-open tab. 15s is a
-  // deliberate compromise: no persistent connection or deployment
-  // change needed, at the cost of not being instant.
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const { alerts } = await api.alerts();
-        if (alerts?.length) {
-          setTurns((prev) => [...prev, ...alerts.map(alertToTurn)]);
-        }
-      } catch {
-        // Transient network/auth hiccup — just try again next tick.
-      }
-    }, 15000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Notifications/Email/Support/Projects action buttons hand a plain-
   // language prompt to this SAME chat session via router state, rather
@@ -90,26 +69,20 @@ export function Chat() {
               Ask me about leads, opportunities, orders, or anything else your role has access to.
             </div>
           )}
-          {turns.map((t) =>
-            t.isAlert ? (
-              <div key={t.id} className="turn">
-                <div className="bubble-alert">{t.response?.message}</div>
+          {turns.map((t) => (
+            <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="turn">
+                <div className="bubble-user">{t.prompt}</div>
               </div>
-            ) : (
-              <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div className="turn">
-                  <div className="bubble-user">{t.prompt}</div>
-                </div>
-                <div className="turn">
-                  {t.pending ? (
-                    <div className="bubble-agent pending">Thinking…</div>
-                  ) : (
-                    t.response && <ResponseView response={t.response} onNextStep={send} />
-                  )}
-                </div>
+              <div className="turn">
+                {t.pending ? (
+                  <div className="bubble-agent pending">Thinking…</div>
+                ) : (
+                  t.response && <ResponseView response={t.response} onNextStep={send} />
+                )}
               </div>
-            )
-          )}
+            </div>
+          ))}
         </div>
         <Composer onSend={send} disabled={sending} />
       </div>

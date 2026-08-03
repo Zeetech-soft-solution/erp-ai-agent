@@ -1,55 +1,35 @@
+import { api } from "../api/client";
+import { Alert } from "../api/types";
 import { NotificationItem } from "./types";
 
 /**
- * Sample data for now, per explicit instruction - no backend call yet.
- * Swap point for later: replace the body of `list()` with
- * `request("/api/notifications")` (see api/client.ts's `request` helper)
- * once a real notifications feed exists; nothing else in the app needs to
- * change since pages only ever call `notificationsService.list()`.
+ * Real data, not sample - GET /api/agent/alerts is backed by an actual
+ * ERPNext webhook (see backend core/alertStore.ts). That endpoint DRAINS
+ * its queue on every call (delivery is destructive, not idempotent), so
+ * there must be exactly one poller for it anywhere in the app - this is
+ * that one place. It used to also be polled from Chat.tsx; that's been
+ * removed, since two independent 15s polls against a drain() endpoint
+ * would race and steal each other's alerts.
  */
-let SAMPLE: NotificationItem[] = [
-  {
-    id: "n1",
-    module: "CRM",
-    title: "Lead qualified, ready to convert",
-    message: "\"Kavita Singh\" (Rao Electricals) was qualified 2 days ago and hasn't moved since.",
-    createdAt: "2026-08-01T09:12:00Z",
-    action: { label: "Convert lead", prompt: "convert the lead for Kavita Singh at Rao Electricals" },
-  },
-  {
-    id: "n2",
-    module: "Sales",
-    title: "Quotation about to expire",
-    message: "Quotation QTN-2026-00042 for Sharma Industries expires in 2 days with no response yet.",
-    createdAt: "2026-08-02T14:30:00Z",
-    action: { label: "Follow up", prompt: "list my quotations that are expiring soon" },
-  },
-  {
-    id: "n3",
-    module: "Purchase",
-    title: "Purchase order awaiting receipt",
-    message: "PO-2026-00318 to Verma Systems was due 3 days ago and hasn't been received yet.",
-    createdAt: "2026-08-02T08:00:00Z",
-    action: { label: "Check status", prompt: "list my purchase orders that are overdue for receipt" },
-  },
-  {
-    id: "n4",
-    module: "HR",
-    title: "Leave request pending your approval",
-    message: "Rekha Kumar requested 3 days of leave starting next week.",
-    createdAt: "2026-08-03T07:45:00Z",
-    action: { label: "Review request", prompt: "list leave applications waiting for my approval" },
-  },
-];
-
-function delay<T>(value: T, ms = 250): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+function alertToNotification(a: Alert): NotificationItem {
+  const module = a.entityKey ? a.entityKey.charAt(0).toUpperCase() + a.entityKey.slice(1) : "Update";
+  return {
+    id: a.id,
+    module,
+    title: `${module} update`,
+    message: a.message,
+    createdAt: a.createdAt,
+    action: a.recordId
+      ? { label: "View details", prompt: `show me details for ${a.entityKey} ${a.recordId}` }
+      : undefined,
+  };
 }
 
 export const notificationsService = {
-  list: (): Promise<NotificationItem[]> => delay([...SAMPLE]),
-  markRead: (id: string): Promise<void> => {
-    SAMPLE = SAMPLE.map((n) => (n.id === id ? { ...n, read: true } : n));
-    return delay(undefined, 100);
+  /** One drain of whatever's currently queued - call on an interval, never in parallel from two places. */
+  poll: async (): Promise<NotificationItem[]> => {
+    const { alerts } = await api.alerts();
+    return (alerts || []).map(alertToNotification);
   },
+  markRead: (_id: string): Promise<void> => Promise.resolve(),
 };
