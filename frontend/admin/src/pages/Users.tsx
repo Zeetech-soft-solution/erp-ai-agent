@@ -53,10 +53,10 @@ export function Users() {
     <div className="main">
       <h1 className="page-title">User credentials</h1>
       <p className="page-subtitle">
-        Provision a persistent ERPNext API key for a user so the agent can act on their behalf without
-        requiring a live password login every time. Generate the key on their ERPNext profile
-        (API Access → Generate Keys), then paste it below — it's validated against ERPNext and encrypted
-        before storage; the secret is never displayed again after saving.
+        Provision a persistent API key for a user so the agent can act on their behalf without
+        requiring a live password login every time. Generate the key on their connected-system profile
+        (API Access → Generate Keys), then paste it below — it's validated against the connected system and
+        encrypted before storage; the secret is never displayed again after saving.
       </p>
 
       <form className="card" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { Alert, ChatTurn } from "../api/types";
 import { ResponseView } from "../components/ResponseView";
@@ -24,6 +25,8 @@ function alertToTurn(alert: Alert): ChatTurn {
 export function Chat() {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [sending, setSending] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Polls for proactive alerts (an ERPNext webhook today — see
   // routes/webhooks.routes.ts) since chat is otherwise pure request/
@@ -43,6 +46,20 @@ export function Chat() {
     }, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  // Notifications/Email/Support/Projects action buttons hand a plain-
+  // language prompt to this SAME chat session via router state, rather
+  // than opening a separate thread - clearing the state (replace) right
+  // after consuming it stops a page refresh or back-navigation from
+  // re-sending the same prompt.
+  useEffect(() => {
+    const autoPrompt = (location.state as { autoPrompt?: string } | null)?.autoPrompt;
+    if (autoPrompt) {
+      send(autoPrompt);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   async function send(prompt: string) {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -65,51 +82,39 @@ export function Chat() {
   }
 
   return (
-    <div className="agent-shell">
-      <header className="agent-header">
-        <div className="brand">ERP <span>Agent</span></div>
-        <button
-          onClick={async () => { await api.logout().catch(() => {}); api.clearToken(); window.location.href = `${import.meta.env.BASE_URL}login`; }}
-          style={{ background: "none", border: "none", color: "var(--ink-secondary)", fontSize: 12, cursor: "pointer" }}
-        >
-          Sign out
-        </button>
-      </header>
-
-      <div className="agent-body">
-        <div className="chat-column">
-          <div className="message-list">
-            {!turns.length && (
-              <div className="bubble-agent">
-                Ask me about leads, opportunities, orders, or anything else your role has access to.
+    <div className="agent-body">
+      <div className="chat-column">
+        <div className="message-list">
+          {!turns.length && (
+            <div className="bubble-agent">
+              Ask me about leads, opportunities, orders, or anything else your role has access to.
+            </div>
+          )}
+          {turns.map((t) =>
+            t.isAlert ? (
+              <div key={t.id} className="turn">
+                <div className="bubble-alert">{t.response?.message}</div>
               </div>
-            )}
-            {turns.map((t) =>
-              t.isAlert ? (
-                <div key={t.id} className="turn self-end">
-                  <div className="bubble-alert">{t.response?.message}</div>
+            ) : (
+              <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="turn">
+                  <div className="bubble-user">{t.prompt}</div>
                 </div>
-              ) : (
-                <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div className="turn">
-                    <div className="bubble-user">{t.prompt}</div>
-                  </div>
-                  <div className="turn self-end">
-                    {t.pending ? (
-                      <div className="bubble-agent pending">Thinking…</div>
-                    ) : (
-                      t.response && <ResponseView response={t.response} onNextStep={send} />
-                    )}
-                  </div>
+                <div className="turn">
+                  {t.pending ? (
+                    <div className="bubble-agent pending">Thinking…</div>
+                  ) : (
+                    t.response && <ResponseView response={t.response} onNextStep={send} />
+                  )}
                 </div>
-              )
-            )}
-          </div>
-          <Composer onSend={send} disabled={sending} />
+              </div>
+            )
+          )}
         </div>
-
-        <DetailPanel />
+        <Composer onSend={send} disabled={sending} />
       </div>
+
+      <DetailPanel />
     </div>
   );
 }

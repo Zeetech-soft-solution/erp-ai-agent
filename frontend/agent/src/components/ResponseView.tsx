@@ -9,6 +9,13 @@ import { api } from "../api/client";
  * buttons inside that HTML are wired via event delegation so clicking
  * one sends a new prompt, same as typing it.
  */
+/** "crm.list_customers" -> "list customers" - a plain-language re-ask the
+ * reasoning engine handles the same as if the user had typed it. */
+function humanizeToolName(tool: string): string {
+  const action = tool.includes(".") ? tool.slice(tool.lastIndexOf(".") + 1) : tool;
+  return action.replace(/_/g, " ");
+}
+
 export function ResponseView({ response, onNextStep }: { response: AgentResponse; onNextStep: (text: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -34,7 +41,15 @@ export function ResponseView({ response, onNextStep }: { response: AgentResponse
 
       <div className="meta-row">
         {response.meta.tools_used.map((t) => (
-          <span className="meta-chip" key={t}>{t}</span>
+          <button
+            type="button"
+            className="meta-chip"
+            key={t}
+            title={`Run this again: ${humanizeToolName(t)}`}
+            onClick={() => onNextStep(humanizeToolName(t))}
+          >
+            {t}
+          </button>
         ))}
         {response.interaction_id && <FeedbackControl interactionId={response.interaction_id} />}
       </div>

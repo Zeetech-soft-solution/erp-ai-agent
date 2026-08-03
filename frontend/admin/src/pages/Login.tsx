@@ -32,7 +32,7 @@ export function Login() {
     <div className="login-shell">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>Admin sign in</h1>
-        <p>Use your ERPNext credentials. Access requires an admin role.</p>
+        <p>Use your work credentials. Access requires an admin role.</p>
 
         <div className="login-mode-toggle">
           <button type="button" className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>

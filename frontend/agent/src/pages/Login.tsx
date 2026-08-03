@@ -39,7 +39,7 @@ export function Login() {
     <div className="login-shell">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>Sign in</h1>
-        <p>Use your own ERPNext identity — every action you take is recorded as you, not a shared account.</p>
+        <p>Use your own work identity — every action you take is recorded as you, not a shared account.</p>
 
         <div className="login-mode-toggle">
           <button type="button" className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>
@@ -58,7 +58,7 @@ export function Login() {
           <>
             <input placeholder="API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required />
             <input placeholder="API secret" value={apiSecret} onChange={(e) => setApiSecret(e.target.value)} required />
-            <p className="login-hint">Generate this in ERPNext: your user profile → API Access → Generate Keys.</p>
+            <p className="login-hint">Generate this in your connected system's admin settings (e.g. your user profile → API Access).</p>
           </>
         )}
 
