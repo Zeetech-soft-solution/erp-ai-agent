@@ -39,6 +39,17 @@ export interface EmailItem {
   action?: WorkflowAction;
 }
 
+/** Mirrors backend providers/mail's SentMail — a real record of an
+ *  email.send tool call (see routes/agent.routes.ts GET /sent-emails),
+ *  not sample data like the rest of this file. */
+export interface SentEmailItem {
+  id: string;
+  to: string;
+  subject: string;
+  body: string;
+  sentAt: string;
+}
+
 export interface SupportTicket {
   id: string;
   subject: string;

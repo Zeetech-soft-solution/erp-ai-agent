@@ -32,17 +32,24 @@ export function Chat() {
   // after consuming it stops a page refresh or back-navigation from
   // re-sending the same prompt.
   useEffect(() => {
-    const autoPrompt = (location.state as { autoPrompt?: string } | null)?.autoPrompt;
-    if (autoPrompt) {
-      send(autoPrompt);
+    const state = location.state as { autoPrompt?: string; silent?: boolean } | null;
+    if (state?.autoPrompt) {
+      send(state.autoPrompt, state.silent);
       navigate(location.pathname, { replace: true, state: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  async function send(prompt: string) {
+  // `silent`: a workflow-tab handoff (Notifications/Email/Support/Projects)
+  // shows no user bubble at all, just "Thinking…" then the response - the
+  // record's own details (which may include things like a raw email
+  // address the LLM needs but the user doesn't need to see echoed back)
+  // stay out of the visible transcript entirely. A next-step button
+  // clicked from WITHIN a response (see onNextStep below) is a normal
+  // visible turn, same as typing into the composer.
+  async function send(prompt: string, silent?: boolean) {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
-    setTurns((prev) => [...prev, { id, prompt, pending: true }]);
+    setTurns((prev) => [...prev, { id, prompt, silent, pending: true }]);
     setSending(true);
     try {
       const response = await api.prompt(prompt);
@@ -72,7 +79,7 @@ export function Chat() {
           {turns.map((t) => (
             <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div className="turn">
-                <div className="bubble-user">{t.prompt}</div>
+                <div className="bubble-user">{t.silent ? "Sending details…" : t.prompt}</div>
               </div>
               <div className="turn">
                 {t.pending ? (

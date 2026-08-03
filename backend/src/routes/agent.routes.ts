@@ -9,6 +9,7 @@ import { PostgresInteractionLogger } from "../core/interactionLogger";
 import { listAllowedTools } from "../core/gateway";
 import { asyncHandler } from "../core/asyncHandler";
 import { alertStore } from "../core/alertStore";
+import { mailboxConnector } from "../providers/mail/stubMailboxConnector";
 
 const interactionLogger = new PostgresInteractionLogger();
 const engine = new ReasoningEngine(
@@ -38,9 +39,29 @@ router.post("/feedback/:interactionId", asyncHandler(async (req: AuthedRequest, 
   res.json({ ok: true });
 }));
 
-router.get("/alerts", (req: AuthedRequest, res) => {
-  res.json({ alerts: alertStore.drain(req.session!.sub) });
-});
+// `since` (an ISO timestamp) turns this from "recent history" into "only
+// what's arrived after this point" - the same endpoint serves both the
+// Notifications tab's initial load and its 15s poll. Nothing is consumed
+// by reading it (see alertStore.ts) - safe to call from more than one
+// place without racing.
+router.get("/notifications", asyncHandler(async (req: AuthedRequest, res) => {
+  const since = typeof req.query.since === "string" ? req.query.since : undefined;
+  const notifications = await alertStore.list(req.session!.sub, since);
+  res.json({ notifications });
+}));
+
+router.post("/notifications/:id/read", asyncHandler(async (req: AuthedRequest, res) => {
+  await alertStore.markRead(req.session!.sub, req.params.id);
+  res.json({ ok: true });
+}));
+
+// What the email.send tool has actually recorded for this user - the
+// Email tab's Sent view reads this so a confirmed reply's outcome shows
+// up there, not just as a message inside the chat transcript.
+router.get("/sent-emails", asyncHandler(async (req: AuthedRequest, res) => {
+  const emails = await mailboxConnector.listSent(req.session!.sub);
+  res.json({ emails });
+}));
 
 router.get("/capabilities", (req: AuthedRequest, res) => {
   const tools = listAllowedTools(req.session!);

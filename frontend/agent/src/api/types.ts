@@ -22,16 +22,22 @@ export interface ChatTurn {
   prompt: string;
   response?: AgentResponse;
   pending?: boolean;
-  isAlert?: boolean;
+  /** True for a workflow-tab handoff (Notifications/Email/Support/Projects) -
+   *  the bubble shows a generic "Sending details…" placeholder instead of
+   *  the actual prompt text, which may carry details (like a raw email
+   *  address) the LLM needs but the user doesn't need echoed back. */
+  silent?: boolean;
 }
 
-/** Mirrors backend core/types.ts Alert — a proactive notification (an
- *  ERPNext webhook today) pushed into chat outside the prompt/response
- *  flow. */
-export interface Alert {
+/** Mirrors backend core/alertStore.ts StoredNotification — a proactive
+ *  notification (an ERPNext webhook today), persisted in Postgres and
+ *  read via GET /api/agent/notifications (history, or delta with `since`),
+ *  never destructively consumed. Surfaced in the Notifications tab. */
+export interface StoredNotification {
   id: string;
   entityKey: string;
   recordId: string;
   message: string;
   createdAt: string;
+  readAt: string | null;
 }

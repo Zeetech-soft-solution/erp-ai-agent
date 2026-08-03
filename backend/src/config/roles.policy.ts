@@ -29,6 +29,7 @@ const ROLE_TOOL_MAP: Record<string, string[]> = {
     "tickets.list",
     "email.list",
     "email.draft",
+    "email.send",
     // Workflow action tools — note "convert" itself also requires
     // allowedRoles at the transition level (see workflows.config.ts),
     // so this grants visibility/callability, the transition rule

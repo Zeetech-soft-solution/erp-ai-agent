@@ -1,35 +1,40 @@
 import { api } from "../api/client";
-import { Alert } from "../api/types";
+import { StoredNotification } from "../api/types";
 import { NotificationItem } from "./types";
 
 /**
- * Real data, not sample - GET /api/agent/alerts is backed by an actual
- * ERPNext webhook (see backend core/alertStore.ts). That endpoint DRAINS
- * its queue on every call (delivery is destructive, not idempotent), so
- * there must be exactly one poller for it anywhere in the app - this is
- * that one place. It used to also be polled from Chat.tsx; that's been
- * removed, since two independent 15s polls against a drain() endpoint
- * would race and steal each other's alerts.
+ * Real data, not sample - GET /api/agent/notifications is backed by an
+ * actual ERPNext webhook, persisted in Postgres (see backend
+ * core/alertStore.ts + db/migrations/006_notifications.sql). Nothing is
+ * consumed by reading it: `history()` is a bounded recent-history query,
+ * `since(cursor)` returns only what's arrived after that timestamp - the
+ * page component polls with the previous call's newest timestamp as the
+ * next cursor, so results only ever accumulate, matching what actually
+ * happened server-side rather than a client-guessed "unseen" set.
  */
-function alertToNotification(a: Alert): NotificationItem {
-  const module = a.entityKey ? a.entityKey.charAt(0).toUpperCase() + a.entityKey.slice(1) : "Update";
+function toItem(n: StoredNotification): NotificationItem {
+  const module = n.entityKey ? n.entityKey.charAt(0).toUpperCase() + n.entityKey.slice(1) : "Update";
   return {
-    id: a.id,
+    id: n.id,
     module,
     title: `${module} update`,
-    message: a.message,
-    createdAt: a.createdAt,
-    action: a.recordId
-      ? { label: "View details", prompt: `show me details for ${a.entityKey} ${a.recordId}` }
+    message: n.message,
+    createdAt: n.createdAt,
+    read: !!n.readAt,
+    action: n.recordId
+      ? { label: "View details", prompt: `show me details for ${n.entityKey} ${n.recordId}` }
       : undefined,
   };
 }
 
 export const notificationsService = {
-  /** One drain of whatever's currently queued - call on an interval, never in parallel from two places. */
-  poll: async (): Promise<NotificationItem[]> => {
-    const { alerts } = await api.alerts();
-    return (alerts || []).map(alertToNotification);
+  history: async (): Promise<NotificationItem[]> => {
+    const { notifications } = await api.notifications();
+    return (notifications as StoredNotification[]).map(toItem);
   },
-  markRead: (_id: string): Promise<void> => Promise.resolve(),
+  since: async (cursor: string): Promise<NotificationItem[]> => {
+    const { notifications } = await api.notifications(cursor);
+    return (notifications as StoredNotification[]).map(toItem);
+  },
+  markRead: (id: string): Promise<void> => api.markNotificationRead(id).catch(() => {}),
 };

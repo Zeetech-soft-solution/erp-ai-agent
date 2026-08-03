@@ -1,34 +1,57 @@
+import { Pool } from "pg";
+import { appConfig } from "../config/app.config";
 import { Alert } from "./types";
 
+export interface StoredNotification extends Alert {
+  readAt: string | null;
+}
+
 /**
- * In-memory queue of pending Alerts per user email, drained by polling
- * (GET /api/agent/alerts). Same shape and same caveat as
- * core/sessionStore.ts: fine for a single backend instance today, swap
- * for Redis (or any list-per-key store) the moment there's more than
- * one process, since alerts pushed on one instance must be visible to
- * a poll served by another.
- *
- * Alerts are keyed by user email rather than sessionId — a webhook
- * only knows who a record's owner is, not which of their sessionIds
- * (if any) are currently open, and a user may be signed in on more
- * than one device. Delivery drains the whole queue at once: if two
- * devices are open, only whichever one polls first gets it — an
- * accepted limitation for now rather than building per-device ack
- * tracking.
+ * Durable, replayable notification feed backed by Postgres (see
+ * db/migrations/006_notifications.sql) — NOT the in-memory, drain-once
+ * queue this used to be. That version lost everything on a backend
+ * restart and delivered each alert to at most one poller ever, which
+ * broke the moment more than one page (Chat AND a Notifications tab)
+ * wanted to read the same feed. `list()` is a plain query: full recent
+ * history with no cursor, or only what's arrived since one, with nothing
+ * ever consumed/removed by reading it.
  */
 class AlertStore {
-  private queues = new Map<string, Alert[]>();
+  private pool: Pool | null = appConfig.db.postgresUrl ? new Pool({ connectionString: appConfig.db.postgresUrl }) : null;
 
-  push(userEmail: string, alert: Alert) {
-    const queue = this.queues.get(userEmail) || [];
-    queue.push(alert);
-    this.queues.set(userEmail, queue);
+  async push(userEmail: string, alert: Alert): Promise<void> {
+    if (!this.pool) return;
+    await this.pool.query(
+      `insert into notifications (id, user_email, entity_key, record_id, message, created_at)
+       values ($1, $2, $3, $4, $5, $6)`,
+      [alert.id, userEmail, alert.entityKey, alert.recordId, alert.message, alert.createdAt]
+    );
   }
 
-  drain(userEmail: string): Alert[] {
-    const queue = this.queues.get(userEmail) || [];
-    this.queues.delete(userEmail);
-    return queue;
+  /** No `since` = most recent history (bounded). With `since` = only what's arrived after that timestamp, for polling. */
+  async list(userEmail: string, since?: string, limit = 50): Promise<StoredNotification[]> {
+    if (!this.pool) return [];
+    const { rows } = since
+      ? await this.pool.query(
+          `select id, entity_key as "entityKey", record_id as "recordId", message,
+                  created_at as "createdAt", read_at as "readAt"
+           from notifications where user_email = $1 and created_at > $2
+           order by created_at asc`,
+          [userEmail, since]
+        )
+      : await this.pool.query(
+          `select id, entity_key as "entityKey", record_id as "recordId", message,
+                  created_at as "createdAt", read_at as "readAt"
+           from notifications where user_email = $1
+           order by created_at desc limit $2`,
+          [userEmail, limit]
+        );
+    return rows;
+  }
+
+  async markRead(userEmail: string, id: string): Promise<void> {
+    if (!this.pool) return;
+    await this.pool.query(`update notifications set read_at = now() where id = $1 and user_email = $2`, [id, userEmail]);
   }
 }
 

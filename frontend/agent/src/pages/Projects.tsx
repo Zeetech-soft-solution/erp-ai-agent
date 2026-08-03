@@ -23,8 +23,8 @@ export function Projects() {
   }
 
   function checkStatus(p: ProjectIssue) {
-    if (!p.action) return;
-    navigate("/chat", { state: { autoPrompt: p.action.prompt } });
+    const prompt = `I have this project issue:\n${p.key} - ${p.title}\nAssignee: ${p.assignee}\nPriority: ${p.priority}\nStatus: ${p.status}\n\nWhat should I do about this?`;
+    navigate("/chat", { state: { autoPrompt: prompt, silent: true } });
   }
 
   return (
@@ -63,11 +63,9 @@ export function Projects() {
                 )}
 
                 <div className="issue-card-actions">
-                  {p.action && (
-                    <button type="button" className="action-btn secondary small" onClick={() => checkStatus(p)}>
-                      {p.action.label}
-                    </button>
-                  )}
+                  <button type="button" className="action-btn secondary small" onClick={() => checkStatus(p)}>
+                    Ask about this
+                  </button>
                   {status !== "Done" && (
                     <button type="button" className="action-btn small" onClick={() => advance(p.id)}>
                       Move to {STATUS_ORDER[STATUS_ORDER.indexOf(status) + 1]}

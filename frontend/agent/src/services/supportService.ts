@@ -1,9 +1,12 @@
 import { SupportTicket } from "./types";
 
-/** Sample data for now - no backend call yet. Swap point: replace `list()`/
- *  `resolve()` with real requests once a helpdesk connector exists (this is
- *  the `tickets.*` module's eventual UI surface - see backend `src/modules/tickets/`). */
-let SAMPLE: SupportTicket[] = [
+/** Sample data for now - no backend call yet. Swap point: replace `list()`
+ *  with a real request once a helpdesk connector exists (this is the
+ *  `tickets.*` module's eventual UI surface - see backend
+ *  `src/modules/tickets/`). Resolving a ticket always happens through chat
+ *  (see pages/Support.tsx), never a method here - same "no fake instant
+ *  action" rule as Email. */
+const SAMPLE: SupportTicket[] = [
   {
     id: "t1",
     subject: "Product not powering on",
@@ -47,8 +50,4 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 
 export const supportService = {
   list: (): Promise<SupportTicket[]> => delay([...SAMPLE]),
-  resolve: (id: string): Promise<SupportTicket> => {
-    SAMPLE = SAMPLE.map((t) => (t.id === id ? { ...t, status: "resolved" as const } : t));
-    return delay(SAMPLE.find((t) => t.id === id)!, 300);
-  },
 };

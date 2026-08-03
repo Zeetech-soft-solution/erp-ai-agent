@@ -6,12 +6,19 @@ import { formatRelativeTime } from "../components/StatusBadge";
 
 const POLL_MS = 15000;
 
+function dedupeById(items: NotificationItem[]): NotificationItem[] {
+  const seen = new Set<string>();
+  return items.filter((n) => (seen.has(n.id) ? false : (seen.add(n.id), true)));
+}
+
 /**
- * Real feed, not sample data: polls GET /api/agent/alerts (an actual
- * ERPNext webhook, see backend core/alertStore.ts) every 15s. That
- * endpoint drains its queue on each call, so results are appended to what
- * we already have rather than replacing it - a poll returning nothing just
- * means nothing new arrived this tick, not that the list is empty.
+ * Real feed, not sample data: loads recent history on mount (so the tab
+ * isn't empty just because you weren't watching when something arrived),
+ * then polls every 15s for only what's new since the last item seen. The
+ * backend (GET /api/agent/notifications, Postgres-backed - see
+ * core/alertStore.ts) never consumes what it returns, so this cursor is
+ * purely a client-side "don't re-fetch old rows" optimization, not the
+ * only copy of the data the way the old drain-once queue was.
  *
  * Each notification's action button doesn't do anything itself - it sends
  * a plain-language prompt into the SAME chat session (via router state) and
@@ -23,34 +30,49 @@ export function Notifications() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const seenIds = useRef(new Set<string>());
+  const cursor = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function poll() {
+    async function loadHistory() {
       try {
-        const fresh = await notificationsService.poll();
-        if (cancelled || !fresh.length) return;
-        const unseen = fresh.filter((n) => !seenIds.current.has(n.id));
-        unseen.forEach((n) => seenIds.current.add(n.id));
-        if (unseen.length) setItems((prev) => [...unseen, ...prev]);
+        const history = await notificationsService.history();
+        if (cancelled) return;
+        // Dedupe by id, not just replace - React 18 StrictMode runs this
+        // effect twice on mount in some setups, and this must stay correct
+        // either way rather than relying on it only running once.
+        setItems((prev) => dedupeById([...history, ...prev]));
+        if (history.length) cursor.current = history[0].createdAt; // newest first from the API
       } catch {
-        // Transient network/auth hiccup - just try again next tick.
+        // Transient network/auth hiccup - the poll loop will retry.
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    poll();
-    const interval = setInterval(poll, POLL_MS);
+    async function pollDelta() {
+      if (!cursor.current) return;
+      try {
+        const fresh = await notificationsService.since(cursor.current);
+        if (cancelled || !fresh.length) return;
+        cursor.current = fresh[fresh.length - 1].createdAt; // since() returns oldest-first
+        setItems((prev) => dedupeById([...fresh].reverse().concat(prev)));
+      } catch {
+        // Transient network/auth hiccup - just try again next tick.
+      }
+    }
+
+    loadHistory();
+    const interval = setInterval(pollDelta, POLL_MS);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   function runAction(n: NotificationItem) {
     if (!n.action) return;
     setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
-    navigate("/chat", { state: { autoPrompt: n.action.prompt } });
+    notificationsService.markRead(n.id);
+    navigate("/chat", { state: { autoPrompt: n.action.prompt, silent: true } });
   }
 
   return (

@@ -46,7 +46,7 @@ router.post("/erpnext/:doctype", asyncHandler(async (req: RawBodyRequest, res) =
     return res.json({ ok: true, delivered: false });
   }
 
-  alertStore.push(canonical.owner, {
+  await alertStore.push(canonical.owner, {
     id: randomUUID(),
     entityKey,
     recordId: canonical.id,

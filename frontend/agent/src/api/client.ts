@@ -31,7 +31,10 @@ export const api = {
   sendFeedback: (interactionId: string, feedback: 1 | -1 | null) =>
     request(`/api/agent/feedback/${interactionId}`, { method: "POST", body: JSON.stringify({ feedback }) }),
   capabilities: () => request("/api/agent/capabilities"),
-  alerts: () => request("/api/agent/alerts"),
+  notifications: (since?: string) =>
+    request(`/api/agent/notifications${since ? `?since=${encodeURIComponent(since)}` : ""}`),
+  markNotificationRead: (id: string) => request(`/api/agent/notifications/${id}/read`, { method: "POST" }),
+  sentEmails: () => request("/api/agent/sent-emails"),
   setToken: (token: string) => localStorage.setItem("erp_agent_token", token),
   clearToken: () => localStorage.removeItem("erp_agent_token"),
   isLoggedIn: () => !!getToken(),

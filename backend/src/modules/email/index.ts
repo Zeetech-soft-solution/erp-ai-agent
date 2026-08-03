@@ -1,13 +1,18 @@
 import { MCPModule } from "../../core/types";
+import { mailboxConnector } from "../../providers/mail/stubMailboxConnector";
 
 /**
- * STUB — external email MCP. "list" is read-only; "draft" composes but
- * deliberately does NOT send — sending should be its own separate tool
- * (email.send) added later and gated to a narrower role set once trusted.
+ * STUB — external email MCP, backed by providers/mail/ (see
+ * stubMailboxConnector.ts for exactly where a real IMAP/SMTP or Gmail/
+ * Graph implementation plugs in). "list" is read-only; "draft" composes
+ * but does not send. "send" DOES actually record a send (durably, via
+ * mailboxConnector.send -> sentEmailStore) so the demo has a real,
+ * inspectable loop — the frontend's Email tab Sent view reads it back —
+ * but it's still a stub in that no real delivery happens yet.
  */
 export const emailModule: MCPModule = {
   name: "email",
-  description: "Read and draft (never send) email (external MCP)",
+  description: "Read, draft, and send email (external MCP)",
   tools: [
     {
       name: "email.list",
@@ -22,6 +27,24 @@ export const emailModule: MCPModule = {
       module: "email",
       parameters: { type: "object", properties: { to: { type: "string" }, subject: { type: "string" }, body: { type: "string" } } },
       handler: async (args) => ({ note: "drafting not yet implemented", draft: args }),
+    },
+    {
+      name: "email.send",
+      description: "Send an email — only call this after the user has confirmed the drafted reply's content",
+      module: "email",
+      parameters: {
+        type: "object",
+        properties: {
+          to: { type: "string", description: "Recipient email address" },
+          subject: { type: "string" },
+          body: { type: "string" },
+        },
+        required: ["to", "subject", "body"],
+      },
+      handler: async (args, session) => {
+        const sent = await mailboxConnector.send(session.sub, { to: args.to, subject: args.subject, body: args.body });
+        return { ok: true, sent };
+      },
     },
   ],
 };

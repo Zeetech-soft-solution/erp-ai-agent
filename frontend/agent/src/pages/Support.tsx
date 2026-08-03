@@ -4,6 +4,12 @@ import { supportService } from "../services/supportService";
 import { SupportTicket } from "../services/types";
 import { StatusBadge, formatRelativeTime } from "../components/StatusBadge";
 
+/**
+ * Same rule as Email: no button here pretends the work is already done.
+ * Both "investigate" and "resolve" route into chat - the agent looks at
+ * the real record and proposes what to do, the confirm step happens there
+ * (the LLM's own next-step buttons), not as an instant local status flip.
+ */
 export function Support() {
   const [items, setItems] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,22 +19,26 @@ export function Support() {
     supportService.list().then((r) => { setItems(r); setLoading(false); });
   }, []);
 
-  function investigate(t: SupportTicket) {
-    if (!t.action) return;
-    navigate("/chat", { state: { autoPrompt: t.action.prompt } });
+  function goToChat(t: SupportTicket, prompt: string, nextStatus: SupportTicket["status"]) {
+    setItems((prev) => prev.map((x) => (x.id === t.id ? { ...x, status: nextStatus } : x)));
+    navigate("/chat", { state: { autoPrompt: prompt, silent: true } });
   }
 
-  function resolve(id: string) {
-    supportService.resolve(id).then((updated) => {
-      setItems((prev) => prev.map((t) => (t.id === id ? updated : t)));
-    });
+  function investigate(t: SupportTicket) {
+    if (!t.action) return;
+    goToChat(t, t.action.prompt, "action_taken");
+  }
+
+  function resolve(t: SupportTicket) {
+    const prompt = `I got this support ticket:\nFrom: ${t.requester}\nPriority: ${t.priority}\nSubject: ${t.subject}\n\nWhat should I do about this?`;
+    goToChat(t, prompt, "resolved");
   }
 
   return (
     <div className="tab-page">
       <div className="tab-page-header">
         <h2>Support</h2>
-        <p>Open tickets, with a shortcut to check the record before you reply and a manual resolve.</p>
+        <p>Every action routes into chat - the agent proposes a next step or resolution, you confirm it there.</p>
       </div>
       {loading && <div className="empty-state">Loading…</div>}
       <div className="card-list">
@@ -53,8 +63,8 @@ export function Support() {
                       {t.action.label}
                     </button>
                   )}
-                  <button type="button" className="action-btn" onClick={() => resolve(t.id)}>
-                    Mark resolved
+                  <button type="button" className="action-btn" onClick={() => resolve(t)}>
+                    Resolve
                   </button>
                 </>
               )}

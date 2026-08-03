@@ -84,16 +84,18 @@ body {
   font-family: var(--font-mono); font-size: 11px; color: var(--ink-secondary);
   background: var(--accent-bg); padding: 3px 8px; border-radius: 999px;
 }
-.tab-nav { display: flex; gap: 2px; margin-left: 8px; }
+.tab-nav-primary { display: flex; gap: 2px; margin-left: 8px; }
+.tab-nav-secondary { display: flex; gap: 2px; margin-left: auto; }
 .tab-nav-link {
   font-size: 13px; font-weight: 500; color: var(--ink-secondary); text-decoration: none;
   padding: 6px 12px; border-radius: 999px; transition: background 0.15s, color 0.15s;
 }
 .tab-nav-link:hover { background: var(--bg-page); }
 .tab-nav-link.active { background: var(--accent-bg); color: var(--accent); }
+.tab-nav-primary .tab-nav-link { font-weight: 600; }
 .sign-out-btn {
   background: none; border: none; color: var(--ink-secondary); font-size: 12px; cursor: pointer;
-  margin-left: auto;
+  margin-left: 16px;
 }
 
 .agent-body { display: grid; grid-template-columns: 1fr; overflow: hidden; height: 100%; min-height: 0; }
@@ -195,6 +197,25 @@ body {
 .tab-page-header p { color: var(--ink-secondary); font-size: 13px; margin: 0; }
 
 .empty-state { color: var(--ink-muted); font-size: 13px; padding: 24px 0; }
+
+/* ---- Email tab: Inbox/Sent segmented toggle ---- */
+.subtab-nav {
+  display: inline-flex; gap: 2px; background: var(--bg-page); border-radius: 999px;
+  padding: 3px; margin-bottom: 16px;
+}
+.subtab-btn {
+  border: none; background: none; font-size: 12.5px; font-weight: 500; color: var(--ink-secondary);
+  padding: 6px 16px; border-radius: 999px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.subtab-btn.active { background: var(--bg-surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.subtab-count {
+  font-family: var(--font-mono); font-size: 10px; margin-left: 5px; opacity: 0.7;
+}
+.card-to { font-family: var(--font-mono); font-size: 11px; color: var(--ink-secondary); }
+.card-sent-tag {
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-muted); background: var(--bg-page);
+  padding: 2px 8px; border-radius: 999px;
+}
 
 .card-list { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
 .card {
