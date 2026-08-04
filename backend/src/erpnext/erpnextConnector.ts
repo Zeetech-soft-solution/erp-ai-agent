@@ -81,10 +81,14 @@ export class ErpNextConnector implements SystemConnector {
     return (res.data.message || []).map((r: any) => r.role);
   }
 
-  async list(entityKey: string, credential: UserCredential, params?: { filters?: Record<string, any>; limit?: number; offset?: number }): Promise<any[]> {
+  async list(entityKey: string, credential: UserCredential, params?: { filters?: Record<string, any>; limit?: number; offset?: number; sortBy?: string; sortDir?: "asc" | "desc" }): Promise<any[]> {
     const mapping = ERPNEXT_ENTITY_MAP[entityKey];
     const client = this.clientFor(credential);
     const nativeFilters = params?.filters ? toNativeData(entityKey, params.filters) : undefined;
+    const nativeSortField = params?.sortBy ? mapping.fieldMap[params.sortBy] : undefined;
+    if (params?.sortBy && !nativeSortField) {
+      console.warn(`[erpnextConnector] "${params.sortBy}" has no native mapping for "${entityKey}" — sortBy ignored`);
+    }
     const rows = await getDocList(
       mapping.doctype,
       {
@@ -92,6 +96,7 @@ export class ErpNextConnector implements SystemConnector {
         filters: nativeFilters ? JSON.stringify(Object.entries(nativeFilters).map(([k, v]) => toFilterTriple(k, v))) : undefined,
         limit_page_length: params?.limit || 100,
         limit_start: params?.offset || 0,
+        order_by: nativeSortField ? `${nativeSortField} ${params?.sortDir || "desc"}` : undefined,
       },
       client
     );
@@ -164,9 +169,27 @@ export class ErpNextConnector implements SystemConnector {
  *  { op, value } pair — lets callers ask for "like"/"in"/range filters
  *  instead of everything silently collapsing to an exact match. */
 type FilterOp = "=" | "!=" | "like" | "in" | ">" | "<" | ">=" | "<=";
+
+// The LLM sees the { op, value } contract documented on every list tool
+// (see entityModuleFactory.ts), but occasionally reaches for Mongo-style
+// operator keys anyway (training-data habit) — {"$like": "..."} instead
+// of {"op": "like", "value": "..."}. Left unhandled, that object doesn't
+// match the "op" in raw check below, so it falls through to an exact-
+// match against the whole broken object and silently returns nothing —
+// confirmed live via interaction_log: a "customer starts with Shree"
+// search failed exactly this way. Normalize the common aliases instead
+// of just documenting the contract and hoping.
+const MONGO_STYLE_OP_ALIASES: Record<string, FilterOp> = {
+  $eq: "=", $ne: "!=", $like: "like", $regex: "like", $in: "in",
+  $gt: ">", $lt: "<", $gte: ">=", $lte: "<=",
+};
+
 function toFilterTriple(field: string, raw: any): [string, FilterOp, any] {
-  if (raw && typeof raw === "object" && !Array.isArray(raw) && "op" in raw) {
-    return [field, raw.op as FilterOp, raw.value];
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    if ("op" in raw) return [field, raw.op as FilterOp, raw.value];
+    for (const [alias, op] of Object.entries(MONGO_STYLE_OP_ALIASES)) {
+      if (alias in raw) return [field, op, raw[alias]];
+    }
   }
   return [field, "=", raw];
 }

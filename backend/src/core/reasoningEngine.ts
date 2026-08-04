@@ -18,7 +18,16 @@ with nothing tabular to show, still end with a DISPLAY_INTENT line using
 "render":"none" so the user gets a clickable confirm button instead of having
 to retype their answer, e.g.
 DISPLAY_INTENT: {"render":"none","next_steps":["Send this email"]}
-If nothing needs a next click, omit the DISPLAY_INTENT line entirely.`;
+If nothing needs a next click, omit the DISPLAY_INTENT line entirely.
+
+CRITICAL when using "render":"table" or "cards": a table showing the actual
+records is rendered separately, directly below your reply, from the same tool
+data — the user sees it too. Your own written reply must NOT re-list, re-name,
+or re-describe those same records one by one (no numbered/bulleted list of
+them, no repeating each row's fields in prose). Keep your reply to one short
+sentence — how many results, and anything the table can't show (e.g. "Found 4
+customers starting with Shree.") — and let the table carry the actual data.
+This does not apply to "render":"none": with nothing tabular, write normally.`;
 
 export class ReasoningEngine {
   constructor(
@@ -32,8 +41,18 @@ export class ReasoningEngine {
     const tools = listAllowedTools(session);
     const contextChunks = await this.contextAssembler.assemble(session, prompt);
 
+    // Without this, the model has no way to know what "today" actually
+    // is and falls back to a guess rooted in its own training data (seen
+    // live: a "last week" query filtered on dates from 2023, years off
+    // from this deployment's real system date and demo-data timeline) —
+    // every relative date ("last week", "this month", "latest") silently
+    // resolves against the wrong "now" without this. Computed in IST
+    // (Asia/Kolkata), not server-local/UTC — this deployment's company
+    // and data are India-based, and a plain UTC date can land on the
+    // wrong calendar day for hours around midnight IST (UTC+5:30).
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const messages: LLMMessage[] = [
-      { role: "system", content: `${SYSTEM_PROMPT}\nUser roles: ${session.erpnext_roles.join(", ")}` },
+      { role: "system", content: `${SYSTEM_PROMPT}\nToday's date is ${today}.\nUser roles: ${session.erpnext_roles.join(", ")}` },
       ...(contextChunks.length
         ? [{ role: "system" as const, content: `Relevant context:\n${ContextAssembler.toPromptBlock(contextChunks)}` }]
         : []),

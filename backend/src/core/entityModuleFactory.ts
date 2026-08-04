@@ -32,13 +32,32 @@ export function buildEntityModule(config: EntityConfig): MCPModule {
       parameters: {
         type: "object",
         properties: {
-          filters: { type: "object" },
+          filters: {
+            type: "object",
+            description:
+              `Keys are canonical field names (${config.canonicalFields.join(", ")}). Each value is either ` +
+              `the exact value to match (e.g. {"status": "Open"}), or an object {"op": ..., "value": ...} for ` +
+              `anything else — op is one of "=", "!=", "like", "in", ">", "<", ">=", "<=". For a partial/prefix ` +
+              `text search use "like" with SQL wildcards, e.g. {"display_name": {"op": "like", "value": "Shree%"}} ` +
+              `to find names starting with "Shree", or "%Shree%" to find it anywhere in the name. Do NOT use ` +
+              `Mongo-style operators like "$like" or "$regex" — they are not supported and will silently match nothing.`,
+          },
           limit: { type: "number", description: "Max rows to return (default 100)" },
           offset: { type: "number", description: "Rows to skip, for paging past the first page" },
+          sortBy: {
+            type: "string",
+            description:
+              `Canonical field to sort by (one of: ${config.canonicalFields.join(", ")}). Use this for "latest"/` +
+              `"most recent"/"oldest" requests instead of guessing at row order — e.g. to find the latest record, ` +
+              `sort by its date field with sortDir "desc" and limit 1.`,
+          },
+          sortDir: { type: "string", enum: ["asc", "desc"], description: 'Sort direction, default "desc" (newest/highest first)' },
         },
       },
       handler: (args, session) =>
-        systemConnector.list(config.entityKey, session.credential, { filters: args?.filters, limit: args?.limit, offset: args?.offset }),
+        systemConnector.list(config.entityKey, session.credential, {
+          filters: args?.filters, limit: args?.limit, offset: args?.offset, sortBy: args?.sortBy, sortDir: args?.sortDir,
+        }),
     });
   }
 

@@ -176,7 +176,11 @@ export interface SystemConnector {
    *  credential since it's not a business transaction. */
   getUserRoles(identifier: string): Promise<string[]>;
 
-  list(entityKey: string, credential: UserCredential, params?: { filters?: Record<string, any>; limit?: number; offset?: number }): Promise<any[]>;
+  /** sortBy is a canonical field name; sortDir defaults to "desc" — lets
+   *  callers ask for "the latest N" or "the oldest N" instead of
+   *  everything coming back in whatever order the underlying system
+   *  happens to store it in (not necessarily creation order). */
+  list(entityKey: string, credential: UserCredential, params?: { filters?: Record<string, any>; limit?: number; offset?: number; sortBy?: string; sortDir?: "asc" | "desc" }): Promise<any[]>;
   get(entityKey: string, credential: UserCredential, id: string): Promise<any>;
   create(entityKey: string, credential: UserCredential, canonicalData: Record<string, any>): Promise<any>;
   update(entityKey: string, credential: UserCredential, id: string, canonicalData: Record<string, any>): Promise<any>;
