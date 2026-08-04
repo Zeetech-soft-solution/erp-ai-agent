@@ -1,12 +1,9 @@
 import { MCPModule } from "../../core/types";
-import { workflowActionStore } from "../../core/workflowActionStore";
 
 /**
- * STUB — external support-desk MCP. "list" is a placeholder (wire a real
- * ticketing API here). "resolve" DOES actually record a resolution
- * (durably, via workflowActionStore) once the user has confirmed it in
- * chat - same discipline as email.send: never claim something is done
- * without a tool call backing it up.
+ * STUB — external support-desk MCP. Free tier: placeholder only, so
+ * the frontend's Support tab has something to call without erroring.
+ * Real resolution-tracking behavior is a pro-tier capability.
  */
 export const ticketsModule: MCPModule = {
   name: "tickets",
@@ -21,7 +18,7 @@ export const ticketsModule: MCPModule = {
     },
     {
       name: "tickets.resolve",
-      description: "Record a support ticket as resolved — only call this after the user has confirmed the proposed resolution",
+      description: "Record a support ticket as resolved",
       module: "tickets",
       parameters: {
         type: "object",
@@ -31,15 +28,7 @@ export const ticketsModule: MCPModule = {
         },
         required: ["ticketId", "resolutionNote"],
       },
-      handler: async (args, session) => {
-        const resolved = await workflowActionStore.push(session.sub, {
-          module: "tickets",
-          recordKey: args.ticketId,
-          action: "resolve",
-          detail: args.resolutionNote,
-        });
-        return { ok: true, resolved };
-      },
+      handler: async () => ({ note: "resolution tracking not yet implemented — wire real API here" }),
     },
   ],
 };

@@ -2,22 +2,9 @@ import { EntityConfig } from "../../../core/types";
 
 /** CRM module. "lead" itself is hand-written in src/modules/crm/ (not
  *  this config/modules/crm/ folder — has real business logic beyond
- *  CRUD) — these are its generic siblings. */
-export const CRM_ENTITIES: EntityConfig[] = [
-  {
-    entityKey: "customer",
-    module: "crm",
-    toolPrefix: "customer",
-    canonicalFields: ["id", "display_name", "group", "territory"],
-    operations: ["list", "get"],
-    description: "Customer accounts",
-  },
-  {
-    entityKey: "opportunity",
-    module: "crm",
-    toolPrefix: "opportunity",
-    canonicalFields: ["id", "party", "status", "amount"],
-    createFields: ["party", "amount"],
-    description: "Sales opportunities",
-  },
-];
+ *  CRUD). Free tier: no generic entity-factory CRM entities beyond
+ *  lead — customer/opportunity/contact/address/territory and the rest
+ *  of the extensible CRM surface are pro-tier. This file stays here,
+ *  empty, so the module's folder shape (entities.ts, rules.ts,
+ *  training.ts) is complete and consistent. */
+export const CRM_ENTITIES: EntityConfig[] = [];

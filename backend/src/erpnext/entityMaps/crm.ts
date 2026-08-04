@@ -1,5 +1,7 @@
 import { ErpNextEntityMapModule } from "./types";
 
+/** Free tier: lead only — customer/opportunity/contact/address/
+ *  territory field mappings are pro-tier. */
 export const CRM_MAP: ErpNextEntityMapModule = {
   lead: {
     doctype: "Lead",
@@ -18,13 +20,5 @@ export const CRM_MAP: ErpNextEntityMapModule = {
       // already has, just with this one extra field wired through.
       modified: "modified",
     },
-  },
-  customer: {
-    doctype: "Customer",
-    fieldMap: { id: "name", display_name: "customer_name", group: "customer_group", territory: "territory" },
-  },
-  opportunity: {
-    doctype: "Opportunity",
-    fieldMap: { id: "name", party: "party_name", status: "status", amount: "opportunity_amount" },
   },
 };

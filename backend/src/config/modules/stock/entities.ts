@@ -1,45 +1,7 @@
 import { EntityConfig } from "../../../core/types";
 
-/** Stock/inventory module. */
-export const STOCK_ENTITIES: EntityConfig[] = [
-  {
-    entityKey: "item",
-    module: "stock",
-    toolPrefix: "item",
-    canonicalFields: ["id", "display_name", "group", "uom"],
-    operations: ["list", "get"],
-    description: "Stock/inventory items",
-  },
-  {
-    entityKey: "warehouse",
-    module: "stock",
-    toolPrefix: "warehouse",
-    canonicalFields: ["id", "display_name"],
-    operations: ["list", "get"],
-    description: "Storage locations",
-  },
-  {
-    entityKey: "delivery_note",
-    module: "stock",
-    toolPrefix: "delivery_note",
-    canonicalFields: ["id", "customer", "status", "date"],
-    operations: ["list", "get"],
-    description: "Outbound goods delivery documents",
-  },
-  {
-    entityKey: "stock_entry",
-    module: "stock",
-    toolPrefix: "stock_entry",
-    canonicalFields: ["id", "entry_type", "status", "date"],
-    operations: ["list", "get"],
-    description: "Internal stock movements (transfer, receipt, issue, manufacture)",
-  },
-  {
-    entityKey: "material_request",
-    module: "stock",
-    toolPrefix: "material_request",
-    canonicalFields: ["id", "request_type", "status", "date"],
-    operations: ["list", "get"],
-    description: "Internal requests to purchase or transfer material",
-  },
-];
+/** Stock/inventory module. Free tier: empty. This file stays here,
+ *  empty, so the module's folder shape (entities.ts, rules.ts,
+ *  training.ts) is complete and consistent — real coverage (item,
+ *  warehouse, delivery_note, and the rest) is a pro-tier capability. */
+export const STOCK_ENTITIES: EntityConfig[] = [];

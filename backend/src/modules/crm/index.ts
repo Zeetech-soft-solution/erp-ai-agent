@@ -6,10 +6,15 @@ import { systemConnector } from "../../config/system.config";
  * CRUD. Every call passes session.credential — this module never acts
  * as the agent's own service account, only ever as the logged-in
  * person, same discipline as core/entityModuleFactory.ts.
+ *
+ * Free tier: only the lead read/create surface is implemented here.
+ * The extended CRM surface (status updates, customers, opportunities,
+ * and everything beyond it across every other module) is a pro-tier
+ * capability — see erp-agent-pro.
  */
 export const crmModule: MCPModule = {
   name: "crm",
-  description: "Leads, customers, and opportunities",
+  description: "Leads",
   tools: [
     {
       name: "crm.list_leads",
@@ -41,36 +46,6 @@ export const crmModule: MCPModule = {
       ruleAction: "create",
       parameters: { type: "object", properties: { display_name: { type: "string" }, email: { type: "string" }, phone: { type: "string" } }, required: ["display_name"] },
       handler: (args, session) => systemConnector.create("lead", session.credential, args),
-    },
-    {
-      name: "crm.update_lead_status",
-      description: "Update a lead's status",
-      module: "crm",
-      entityKey: "lead",
-      ruleAction: "update",
-      parameters: { type: "object", properties: { id: { type: "string" }, status: { type: "string" } }, required: ["id", "status"] },
-      handler: (args, session) => systemConnector.update("lead", session.credential, args.id, { status: args.status }),
-    },
-    {
-      name: "crm.list_customers",
-      description: "List customers",
-      module: "crm",
-      parameters: { type: "object", properties: { filters: { type: "object" } } },
-      handler: (args, session) => systemConnector.list("customer", session.credential, { filters: args?.filters }),
-    },
-    {
-      name: "crm.list_opportunities",
-      description: "List sales opportunities",
-      module: "crm",
-      parameters: { type: "object", properties: { filters: { type: "object" } } },
-      handler: (args, session) => systemConnector.list("opportunity", session.credential, { filters: args?.filters }),
-    },
-    {
-      name: "crm.create_opportunity",
-      description: "Create a sales opportunity",
-      module: "crm",
-      parameters: { type: "object", properties: { party: { type: "string" }, amount: { type: "number" } }, required: ["party"] },
-      handler: (args, session) => systemConnector.create("opportunity", session.credential, args),
     },
   ],
 };

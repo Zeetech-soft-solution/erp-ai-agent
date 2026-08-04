@@ -2,11 +2,11 @@ import { RuleSet } from "../../../core/types";
 import { systemConnector } from "../../system.config";
 
 /**
- * CRM module rules — one of two populated business-rule sets today
- * (the other is selling/rules.ts), proving the pattern against
- * ERPNext's Lead entity. Illustrative starter set, not exhaustive
- * coverage: to extend, add rules to this file's array. Every other
- * module's rules.ts follows this same shape.
+ * CRM module rules — free tier: only the two rules covering lead
+ * creation (the only lead action this tier exposes — see
+ * src/modules/crm/index.ts, which has no update tool). The extended
+ * rule set (status-change gating, and every other module's business
+ * rules) is a pro-tier capability.
  */
 export const CRM_RULES: RuleSet[] = [
   {
@@ -39,23 +39,6 @@ export const CRM_RULES: RuleSet[] = [
               ruleId: "lead.warn_duplicate_email",
               message: `A lead with email "${args.email}" already exists (${existing[0].display_name || existing[0].id}).`,
               blocking: false,
-            };
-          }
-          return null;
-        },
-      },
-      {
-        id: "lead.convert_requires_manager",
-        action: "update",
-        description: "Only a Sales Manager or System Manager can mark a lead Converted directly",
-        check: (args, session) => {
-          if (args?.status !== "Converted") return null;
-          const allowedRoles = ["Sales Manager", "System Manager"];
-          if (!allowedRoles.some((r) => session.erpnext_roles.includes(r))) {
-            return {
-              ruleId: "lead.convert_requires_manager",
-              message: `Converting a lead directly requires one of: ${allowedRoles.join(", ")}.`,
-              blocking: true,
             };
           }
           return null;

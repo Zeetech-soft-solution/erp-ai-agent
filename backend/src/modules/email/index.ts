@@ -1,14 +1,10 @@
 import { MCPModule } from "../../core/types";
-import { mailboxConnector } from "../../providers/mail/stubMailboxConnector";
 
 /**
- * STUB — external email MCP, backed by providers/mail/ (see
- * stubMailboxConnector.ts for exactly where a real IMAP/SMTP or Gmail/
- * Graph implementation plugs in). "list" is read-only; "draft" composes
- * but does not send. "send" DOES actually record a send (durably, via
- * mailboxConnector.send -> sentEmailStore) so the demo has a real,
- * inspectable loop — the frontend's Email tab Sent view reads it back —
- * but it's still a stub in that no real delivery happens yet.
+ * STUB — external email MCP. Free tier: placeholder only, so the
+ * frontend's Email tab has something to call without erroring. Real
+ * send/draft behavior (and the durable send-tracking loop behind it)
+ * is a pro-tier capability.
  */
 export const emailModule: MCPModule = {
   name: "email",
@@ -30,7 +26,7 @@ export const emailModule: MCPModule = {
     },
     {
       name: "email.send",
-      description: "Send an email — only call this after the user has confirmed the drafted reply's content",
+      description: "Send an email",
       module: "email",
       parameters: {
         type: "object",
@@ -41,10 +37,7 @@ export const emailModule: MCPModule = {
         },
         required: ["to", "subject", "body"],
       },
-      handler: async (args, session) => {
-        const sent = await mailboxConnector.send(session.sub, { to: args.to, subject: args.subject, body: args.body });
-        return { ok: true, sent };
-      },
+      handler: async () => ({ note: "sending not yet implemented — wire real API here" }),
     },
   ],
 };
