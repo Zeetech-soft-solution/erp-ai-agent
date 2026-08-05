@@ -30,6 +30,8 @@ export const api = {
   getSettings: () => request("/api/admin/settings"),
   updateSetting: (key: string, value: any) =>
     request(`/api/admin/settings/${key}`, { method: "PUT", body: JSON.stringify({ value }) }),
+  getUserSettingDefs: () => request("/api/admin/user-settings/defs"),
+  getUserSettingValues: (email: string) => request(`/api/admin/user-settings/${encodeURIComponent(email)}`),
   getStatus: () => request("/api/admin/status"),
   getUsers: () => request("/api/admin/users"),
   setUserCredential: (email: string, apiKey: string, apiSecret: string) =>

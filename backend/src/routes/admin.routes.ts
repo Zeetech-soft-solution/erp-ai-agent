@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth, AuthedRequest } from "../auth/middleware";
 import { requireAdmin } from "../auth/adminMiddleware";
 import { settingsService } from "../core/settingsService";
+import { userSettingsService } from "../core/userSettingsService";
 import { moduleRegistry } from "../core/moduleRegistry";
 import { userCredentialStore } from "../core/userCredentialStore";
 import { systemConnector } from "../config/system.config";
@@ -23,6 +24,17 @@ router.put("/settings/:key", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+// Per-user settings (email/support/project-plan/policy) — read-only
+// from here; see core/userSettingsService.ts. No write route yet on
+// purpose, the admin UI's save button never calls one.
+router.get("/user-settings/defs", asyncHandler(async (_req, res) => {
+  res.json({ defs: await userSettingsService.listDefs() });
+}));
+
+router.get("/user-settings/:email", asyncHandler(async (req, res) => {
+  res.json({ values: await userSettingsService.listForUser(req.params.email) });
+}));
 
 // System status strip — real signal (which modules loaded, how many
 // tools each exposes), not decorative, for the admin dashboard header.

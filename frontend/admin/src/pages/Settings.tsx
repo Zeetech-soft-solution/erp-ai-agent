@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { StatusStrip } from "../components/StatusStrip";
 
 interface Setting {
   key: string;
@@ -15,14 +14,18 @@ interface Setting {
 
 // Display order and section copy — categories not listed here (there
 // shouldn't be any) fall back to their raw key, title-cased.
-const CATEGORY_ORDER = ["general", "email", "support", "projplan", "policy"];
+const CATEGORY_ORDER = ["general", "email", "policy"];
 const CATEGORY_LABELS: Record<string, { title: string; subtitle: string }> = {
   general: { title: "General", subtitle: "Core operational knobs for the agent app." },
-  email: { title: "Email (SMTP)", subtitle: "Outgoing mail server used for notifications." },
-  support: { title: "Support portal", subtitle: "Where and how new support tickets are routed." },
-  projplan: { title: "Project planning", subtitle: "Defaults for the Projects module." },
+  email: { title: "Email (SMTP)", subtitle: "The org's one outgoing mail server — not per-person." },
   policy: { title: "Policy documents", subtitle: "Defaults for the Policy Documents upload form." },
 };
+// Support/project-planning settings moved to per-user settings on the
+// Users page (db/migrations/010_user_settings.sql) — those are one
+// value per PERSON, not one org-wide value, so they don't belong here.
+// Email (SMTP) stays global: one outgoing mail server for the whole
+// org; per-user email preferences (reply-to, signature) live alongside
+// it on the Users page instead, layered on top of this shared server.
 
 /**
  * These fields save to the database (a real `settings` row, with an
@@ -93,8 +96,6 @@ export function Settings() {
   return (
     <div className="main">
       <h1 className="page-title">Global settings</h1>
-
-      <StatusStrip />
 
       {grouped.map(({ cat, rows }) => {
         const meta = CATEGORY_LABELS[cat] || { title: cat, subtitle: "" };
