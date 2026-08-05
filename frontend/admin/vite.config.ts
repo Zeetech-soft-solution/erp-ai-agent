@@ -3,6 +3,6 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/agent-admin/",
+  base: "/free-admin/",
   server: { port: 5173 },
 });
