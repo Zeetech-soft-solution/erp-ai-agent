@@ -3,6 +3,9 @@ import { Login } from "./pages/Login";
 import { Settings } from "./pages/Settings";
 import { Users } from "./pages/Users";
 import { PolicyDocuments } from "./pages/PolicyDocuments";
+import { EmailSettings } from "./pages/EmailSettings";
+import { SupportSettings } from "./pages/SupportSettings";
+import { ProjectSettings } from "./pages/ProjectSettings";
 import { Sidebar } from "./components/Sidebar";
 import { api } from "./api/client";
 
@@ -56,6 +59,36 @@ export default function App() {
             <RequireAuth>
               <AdminLayout>
                 <PolicyDocuments />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/email-settings"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <EmailSettings />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/support-settings"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <SupportSettings />
+              </AdminLayout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-settings"
+          element={
+            <RequireAuth>
+              <AdminLayout>
+                <ProjectSettings />
               </AdminLayout>
             </RequireAuth>
           }

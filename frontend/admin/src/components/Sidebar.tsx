@@ -14,6 +14,15 @@ export function Sidebar() {
         <NavLink to="/policy-documents" className={({ isActive }) => (isActive ? "active" : "")}>
           Policy documents
         </NavLink>
+        <NavLink to="/email-settings" className={({ isActive }) => (isActive ? "active" : "")}>
+          Email settings
+        </NavLink>
+        <NavLink to="/support-settings" className={({ isActive }) => (isActive ? "active" : "")}>
+          Support settings
+        </NavLink>
+        <NavLink to="/project-settings" className={({ isActive }) => (isActive ? "active" : "")}>
+          Project settings
+        </NavLink>
         {/* Add more admin sections here as the console grows:
             role policy editor, module toggles, audit log viewer, etc. */}
       </nav>

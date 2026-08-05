@@ -110,6 +110,15 @@ export function PolicyDocuments() {
         re-embeds automatically, no re-upload needed.
       </p>
 
+      <a
+        className="save-btn"
+        style={{ display: "inline-block", textDecoration: "none", marginBottom: 16 }}
+        href={`${import.meta.env.BASE_URL}policy-document-template.docx`}
+        download
+      >
+        Download template (.docx)
+      </a>
+
       <form className="card" onSubmit={handleUpload} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <input className="setting-input" style={{ width: "100%" }} placeholder="Title (e.g. Lead Qualification Policy)" value={title} onChange={(e) => setTitle(e.target.value)} required />
         <select className="setting-input" style={{ width: "100%" }} value={moduleKey} onChange={(e) => setModuleKey(e.target.value)}>
@@ -122,49 +131,69 @@ export function PolicyDocuments() {
         </button>
       </form>
 
-      <div className="card">
-        {docs.map((doc) => (
-          <div className="card-row" key={doc.id} style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <div>
-                <p className="setting-label">
-                  {doc.title} {!doc.active && <span style={{ color: "var(--ink-muted)", fontWeight: 400 }}>(inactive)</span>}
-                </p>
-                <p className="setting-desc">
-                  {doc.module || "all modules"} · v{doc.version} · {doc.filename} · uploaded by {doc.uploaded_by} ·
-                  updated {new Date(doc.updated_at).toLocaleString()}
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                <button className="save-btn" style={{ background: "transparent", color: "var(--ink)" }} onClick={() => (editingId === doc.id ? setEditingId(null) : startEdit(doc))}>
-                  {editingId === doc.id ? "Cancel" : "Edit"}
-                </button>
-                <button className="save-btn" style={{ background: "transparent", color: "var(--ink)" }} onClick={() => toggleActive(doc)}>
-                  {doc.active ? "Deactivate" : "Reactivate"}
-                </button>
-                <button className="save-btn" style={{ background: "transparent", color: "#A32D2D", borderColor: "#A32D2D" }} onClick={() => handleDelete(doc)}>
-                  Delete
-                </button>
-              </div>
-            </div>
-
-            {editingId === doc.id && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <textarea
-                  className="setting-input"
-                  style={{ width: "100%", minHeight: 220, fontFamily: "var(--font-body)" }}
-                  value={editDraft}
-                  onChange={(e) => setEditDraft(e.target.value)}
-                />
-                <button className="save-btn" disabled={saving} style={{ alignSelf: "flex-start" }} onClick={() => saveEdit(doc)}>
-                  {saving ? "Saving & re-indexing…" : "Save & re-index"}
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-        {!docs.length && !error && <p className="setting-desc">No policy documents uploaded yet.</p>}
-      </div>
+      {docs.length ? (
+        <div className="table-scroll">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Module</th>
+                <th>Version</th>
+                <th>Uploaded by</th>
+                <th>Updated</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map((doc) => (
+                <>
+                  <tr key={doc.id}>
+                    <td>{doc.title}</td>
+                    <td>{doc.module || "all modules"}</td>
+                    <td>v{doc.version}</td>
+                    <td>{doc.uploaded_by}</td>
+                    <td>{new Date(doc.updated_at).toLocaleString()}</td>
+                    <td>{doc.active ? "Active" : <span style={{ color: "var(--ink-muted)" }}>Inactive</span>}</td>
+                    <td>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button className="save-btn" style={{ background: "transparent", color: "var(--ink)" }} onClick={() => (editingId === doc.id ? setEditingId(null) : startEdit(doc))}>
+                          {editingId === doc.id ? "Cancel" : "Edit"}
+                        </button>
+                        <button className="save-btn" style={{ background: "transparent", color: "var(--ink)" }} onClick={() => toggleActive(doc)}>
+                          {doc.active ? "Deactivate" : "Reactivate"}
+                        </button>
+                        <button className="save-btn" style={{ background: "transparent", color: "#A32D2D", borderColor: "#A32D2D" }} onClick={() => handleDelete(doc)}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {editingId === doc.id && (
+                    <tr key={`${doc.id}-edit`}>
+                      <td colSpan={7}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 0" }}>
+                          <textarea
+                            className="setting-input"
+                            style={{ width: "100%", minHeight: 220, fontFamily: "var(--font-body)" }}
+                            value={editDraft}
+                            onChange={(e) => setEditDraft(e.target.value)}
+                          />
+                          <button className="save-btn" disabled={saving} style={{ alignSelf: "flex-start" }} onClick={() => saveEdit(doc)}>
+                            {saving ? "Saving & re-indexing…" : "Save & re-index"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        !error && <p className="setting-desc">No policy documents uploaded yet.</p>
+      )}
 
       {error && <p className="error-text">{error}</p>}
     </div>

@@ -14,18 +14,21 @@ interface Setting {
 
 // Display order and section copy — categories not listed here (there
 // shouldn't be any) fall back to their raw key, title-cased.
-const CATEGORY_ORDER = ["general", "email", "policy"];
+const CATEGORY_ORDER = ["general", "email"];
 const CATEGORY_LABELS: Record<string, { title: string; subtitle: string }> = {
   general: { title: "General", subtitle: "Core operational knobs for the agent app." },
   email: { title: "Email (SMTP)", subtitle: "The org's one outgoing mail server — not per-person." },
-  policy: { title: "Policy documents", subtitle: "Defaults for the Policy Documents upload form." },
 };
-// Support/project-planning settings moved to per-user settings on the
-// Users page (db/migrations/010_user_settings.sql) — those are one
-// value per PERSON, not one org-wide value, so they don't belong here.
-// Email (SMTP) stays global: one outgoing mail server for the whole
-// org; per-user email preferences (reply-to, signature) live alongside
-// it on the Users page instead, layered on top of this shared server.
+// Support/project-planning settings moved to per-user settings pages
+// (db/migrations/010_user_settings.sql) — those are one value per
+// PERSON, not one org-wide value, so they don't belong here. Policy
+// settings moved to the Policy Documents page itself
+// (011_remove_global_policy_settings.sql) — no separate "default
+// module" concept needed, that page's own upload form already lets an
+// admin pick a module per upload. Email (SMTP) stays global: one
+// outgoing mail server for the whole org; per-user email preferences
+// (reply-to, signature) live on their own settings page instead,
+// layered on top of this shared server.
 
 /**
  * These fields save to the database (a real `settings` row, with an
