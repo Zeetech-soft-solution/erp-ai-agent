@@ -33,6 +33,11 @@ body {
   min-height: 100vh;
 }
 
+.demo-banner {
+  background: var(--alert-bg, #FEF3E2); color: var(--alert, #B45309); border-bottom: 1px solid var(--alert, #B45309);
+  padding: 8px 24px; font-size: 12.5px; font-weight: 500;
+}
+
 .sidebar {
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
@@ -184,10 +189,25 @@ button.save-btn:disabled {
 .login-shell {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--bg-page);
 }
+.admin-demo-hint {
+  width: 340px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+.admin-demo-hint-title { font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
+.admin-demo-hint-creds { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+.admin-demo-hint-note { font-size: 11px; color: var(--ink-muted); }
 .login-card {
   width: 340px;
   background: var(--bg-surface);
