@@ -27,6 +27,9 @@ export const api = {
   loginWithApiKey: (email: string, apiKey: string, apiSecret: string) =>
     request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, apiKey, apiSecret }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
+  getMe: () => request("/api/auth/me"),
+  updateUserSetting: (email: string, key: string, value: any) =>
+    request(`/api/admin/user-settings/${encodeURIComponent(email)}/${key}`, { method: "PUT", body: JSON.stringify({ value }) }),
   getSettings: () => request("/api/admin/settings"),
   updateSetting: (key: string, value: any) =>
     request(`/api/admin/settings/${key}`, { method: "PUT", body: JSON.stringify({ value }) }),

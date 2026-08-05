@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginWithPassword, loginWithApiKey } from "../auth/erpnextAuth";
+import { loginWithPassword, loginWithApiKey, DEMO_ADMIN_EMAIL } from "../auth/erpnextAuth";
 import { requireAuth, AuthedRequest } from "../auth/middleware";
 import { sessionStore } from "../core/sessionStore";
 import { syncNowForSession } from "../core/erpnextNotificationSync";
@@ -38,6 +38,21 @@ router.post("/login", async (req, res) => {
 router.post("/logout", requireAuth, (req: AuthedRequest, res) => {
   sessionStore.destroy(req.sessionId!);
   res.json({ ok: true });
+});
+
+/**
+ * Lets the frontend tell a real, authenticated session apart from the
+ * demo.admin@local shortcut WITHOUT decoding the JWT itself — `isDemo`
+ * is the one flag every admin page checks before deciding whether Save
+ * actually persists or shows the "not authorized" message, and whether
+ * secret-type values are redacted in what it displays.
+ */
+router.get("/me", requireAuth, (req: AuthedRequest, res) => {
+  res.json({
+    email: req.session!.sub,
+    roles: req.session!.erpnext_roles,
+    isDemo: req.session!.sub === DEMO_ADMIN_EMAIL,
+  });
 });
 
 export default router;

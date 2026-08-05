@@ -1,5 +1,6 @@
 import { LLMProvider, LLMMessage, LLMResponse, ToolDefinition } from "../../core/types";
 import { appConfig } from "../../config/app.config";
+import { settingsService } from "../../core/settingsService";
 import axios from "axios";
 
 /**
@@ -8,6 +9,13 @@ import axios from "axios";
  * shape. Replacing it with your own hosted model later means writing
  * one new class implementing the same LLMProvider interface and
  * flipping LLM_PROVIDER in app.config — reasoningEngine.ts never changes.
+ *
+ * baseUrl/model/apiKey are read from the DB-backed settings on every
+ * call (llm_base_url/llm_model/llm_api_key — see
+ * db/migrations/012_llm_settings.sql), falling back to the .env value
+ * if that row doesn't exist yet. settingsService's own 15s cache means
+ * this doesn't add a real DB round-trip per prompt — see the "what's
+ * faster, DB or .env" discussion this was built from.
  */
 export class OpenAIProvider implements LLMProvider {
   async chat(messages: LLMMessage[], tools: ToolDefinition[]): Promise<LLMResponse> {
@@ -20,12 +28,16 @@ export class OpenAIProvider implements LLMProvider {
       },
     }));
 
+    const baseUrl = await settingsService.get("llm_base_url", appConfig.llm.baseUrl);
+    const model = await settingsService.get("llm_model", appConfig.llm.model);
+    const apiKey = await settingsService.get("llm_api_key", appConfig.llm.apiKey);
+
     let res;
     try {
       res = await axios.post(
-        `${appConfig.llm.baseUrl}/chat/completions`,
+        `${baseUrl}/chat/completions`,
         {
-          model: appConfig.llm.model,
+          model,
           messages: messages.map((m) =>
             m.role === "assistant" && m.tool_calls?.length
               ? {
@@ -45,7 +57,7 @@ export class OpenAIProvider implements LLMProvider {
           ),
           tools: toolSchemas,
         },
-        { headers: { Authorization: `Bearer ${appConfig.llm.apiKey}` } }
+        { headers: { Authorization: `Bearer ${apiKey}` } }
       );
     } catch (err: any) {
       const message = err.response?.data?.error?.message || err.message;

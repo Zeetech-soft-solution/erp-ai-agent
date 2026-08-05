@@ -9,6 +9,18 @@ import { RolePolicyProvider, Session, UserCredential } from "../core/types";
 // touching this login flow.
 const rolePolicy: RolePolicyProvider = new StaticRolePolicyProvider();
 
+// Demo-only shortcut, explicitly requested: this exact email/password
+// never touches ERPNext and never goes through a real role check — it
+// just signs straight into a synthetic System Manager session so
+// someone can look around the admin console without a real ERPNext
+// account. requireAdmin (auth/adminMiddleware.ts) still runs for this
+// session like any other; it just always passes because the session
+// carries "System Manager" already. Every other email/password still
+// goes through the real systemConnector + getUserRoles path below,
+// unchanged.
+export const DEMO_ADMIN_EMAIL = "demo.admin@local";
+const DEMO_ADMIN_PASSWORD = "123";
+
 async function finishLogin(identifier: string, credential: UserCredential) {
   const roles = await systemConnector.getUserRoles(identifier);
   const allowedTools = await rolePolicy.resolveAllowedTools(roles);
@@ -28,6 +40,18 @@ async function finishLogin(identifier: string, credential: UserCredential) {
  * up yet, so the system works before any admin provisioning happens.
  */
 export async function loginWithPassword(email: string, password: string) {
+  if (email.toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASSWORD) {
+    const session: Session = {
+      sub: DEMO_ADMIN_EMAIL,
+      erpnext_roles: ["System Manager"], // not verified anywhere — demo-only, see comment above
+      allowed_tools: ["*"],
+      credential: { mode: "none" }, // no real ERPNext identity behind this session
+    };
+    const sessionId = sessionStore.create(session);
+    const token = issueAgentToken(sessionId);
+    return { token, session };
+  }
+
   const sessionCredential = await systemConnector.loginWithPassword(email, password);
 
   const stored = await userCredentialStore.get(email);

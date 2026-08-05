@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { useSession } from "../context/SessionContext";
 
 interface StoredUser {
   userEmail: string;
@@ -26,7 +27,9 @@ const SAMPLE_ROW = {
  * this list only ever displays metadata.
  */
 export function Users() {
+  const { isDemo } = useSession();
   const [users, setUsers] = useState<StoredUser[]>([]);
+  const [erpGeneratesKeys, setErpGeneratesKeys] = useState(true);
   const [email, setEmail] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
@@ -38,8 +41,21 @@ export function Users() {
   }
   useEffect(load, []);
 
+  useEffect(() => {
+    api
+      .getSettings()
+      .then((r) => {
+        const row = r.settings.find((s: any) => s.key === "erp_supports_api_key_generation");
+        if (row) setErpGeneratesKeys(Boolean(row.value));
+      })
+      .catch(() => {});
+  }, []);
+
+  const provisioningDisabled = isDemo || erpGeneratesKeys;
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (provisioningDisabled) return;
     setSaving(true);
     setError("");
     try {
@@ -54,6 +70,7 @@ export function Users() {
   }
 
   async function handleRevoke(userEmail: string) {
+    if (isDemo) return;
     if (!confirm(`Revoke the stored credential for ${userEmail}? They'll fall back to session-based login until re-provisioned.`)) return;
     await api.revokeUserCredential(userEmail);
     load();
@@ -67,15 +84,24 @@ export function Users() {
       <h1 className="page-title">User credentials</h1>
       <p className="page-subtitle">Provision an API key so the agent can act as this person without a live login every time.</p>
 
-      <form className="card" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input className="setting-input" style={{ width: "100%" }} placeholder="user@company.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input className="setting-input" style={{ width: "100%" }} placeholder="API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required />
-        <input className="setting-input" style={{ width: "100%" }} placeholder="API secret" value={apiSecret} onChange={(e) => setApiSecret(e.target.value)} required />
-        <button className="save-btn" type="submit" disabled={saving} style={{ alignSelf: "flex-start" }}>
-          {saving ? "Validating & saving…" : "Provision credential"}
-        </button>
-        {error && <p className="error-text">{error}</p>}
-      </form>
+      {erpGeneratesKeys ? (
+        <p className="setting-desc" style={{ marginBottom: 16 }}>
+          The connected system generates its own API keys (see Global settings → "Connected ERP generates its own API keys") —
+          manual provisioning is disabled. Generate a key on that user's own profile instead; it becomes visible below automatically
+          once wired.
+        </p>
+      ) : (
+        <form className="card" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input className="setting-input" style={{ width: "100%" }} placeholder="user@company.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isDemo} required />
+          <input className="setting-input" style={{ width: "100%" }} placeholder="API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} disabled={isDemo} required />
+          <input className="setting-input" style={{ width: "100%" }} placeholder="API secret" value={apiSecret} onChange={(e) => setApiSecret(e.target.value)} disabled={isDemo} required />
+          <button className="save-btn" type="submit" disabled={saving || provisioningDisabled} style={{ alignSelf: "flex-start" }}>
+            {saving ? "Validating & saving…" : "Provision credential"}
+          </button>
+          {isDemo && <p className="setting-desc">Demo login — viewing only, provisioning is disabled.</p>}
+          {error && <p className="error-text">{error}</p>}
+        </form>
+      )}
 
       {showingSample && <p className="setting-desc">No credentials provisioned yet — showing a sample row below.</p>}
 
@@ -98,7 +124,7 @@ export function Users() {
                 <td>{u.provisionedBy}</td>
                 <td>{u.updatedAt ? new Date(u.updatedAt).toLocaleString() : "—"}</td>
                 <td>
-                  {!showingSample && (
+                  {!showingSample && !isDemo && (
                     <button className="save-btn" style={{ background: "transparent", color: "#A32D2D", borderColor: "#A32D2D" }} onClick={() => handleRevoke(u.userEmail)}>
                       Revoke
                     </button>
