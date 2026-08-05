@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { useSession } from "../context/SessionContext";
 
 interface Setting {
   key: string;
@@ -23,23 +24,9 @@ const CATEGORY_LABELS: Record<string, { title: string; subtitle: string }> = {
 // (db/migrations/010_user_settings.sql) — those are one value per
 // PERSON, not one org-wide value, so they don't belong here. Policy
 // settings moved to the Policy Documents page itself
-// (011_remove_global_policy_settings.sql) — no separate "default
-// module" concept needed, that page's own upload form already lets an
-// admin pick a module per upload. Email (SMTP) stays global: one
-// outgoing mail server for the whole org; per-user email preferences
-// (reply-to, signature) live on their own settings page instead,
-// layered on top of this shared server.
-
-/**
- * These fields save to the database (a real `settings` row, with an
- * audit-log entry) so the structure is ready, but nothing in the agent
- * backend reads the email, support, project-plan, or policy groups yet
- * (nor the two new general fields, jwt_expires_in and
- * context_session_turns). This page is deliberately write-path-only
- * while that wiring is still pending; see the banner below.
- */
-const SAVE_DISABLED_MESSAGE =
-  "Not authorized to save yet — this settings group is still being built and isn't wired to the agent, so saving is disabled for now.";
+// (011_remove_global_policy_settings.sql). Email (SMTP) and the LLM
+// provider/key/base-URL fields (012_llm_and_erp_settings.sql) stay
+// global — one shared config for the whole org, not per-person.
 
 function validate(s: Setting, raw: any): string | null {
   if (s.value_type === "number" && raw !== "" && Number.isNaN(Number(raw))) {
@@ -55,9 +42,11 @@ function validate(s: Setting, raw: any): string | null {
 }
 
 export function Settings() {
+  const { isDemo } = useSession();
   const [settings, setSettings] = useState<Setting[]>([]);
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   const [fieldError, setFieldError] = useState<Record<string, string>>({});
+  const [savedKey, setSavedKey] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -71,11 +60,9 @@ export function Settings() {
     return s.key in drafts ? drafts[s.key] : s.value;
   }
 
-  // Validates, then stops here — the actual save call is intentionally
-  // never made while this feature is pending authorization (see
-  // SAVE_DISABLED_MESSAGE above). Nothing is sent to the server.
-  function save(s: Setting) {
+  async function save(s: Setting) {
     setError("");
+    setSavedKey(null);
     const raw = draftFor(s);
     const problem = validate(s, raw);
     if (problem) {
@@ -83,11 +70,25 @@ export function Settings() {
       return;
     }
     setFieldError({ ...fieldError, [s.key]: "" });
+
+    if (isDemo) {
+      setError("Demo login — viewing only, saving is disabled.");
+      return;
+    }
+
+    const value = s.value_type === "number" ? Number(raw) : s.value_type === "boolean" ? Boolean(raw) : raw;
     setSavingKey(s.key);
-    setTimeout(() => {
+    try {
+      await api.updateSetting(s.key, value);
+      setDrafts((d) => { const next = { ...d }; delete next[s.key]; return next; });
+      setSettings((rows) => rows.map((r) => (r.key === s.key ? { ...r, value } : r)));
+      setSavedKey(s.key);
+      setTimeout(() => setSavedKey((k) => (k === s.key ? null : k)), 1500);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
       setSavingKey(null);
-      setError(SAVE_DISABLED_MESSAGE);
-    }, 400);
+    }
   }
 
   const grouped = CATEGORY_ORDER.map((cat) => ({ cat, rows: settings.filter((s) => s.category === cat) })).filter(
@@ -147,7 +148,7 @@ export function Settings() {
                         />
                       )}
                       <button className="save-btn" disabled={savingKey === s.key} onClick={() => save(s)}>
-                        {savingKey === s.key ? "Saving…" : "Save"}
+                        {savingKey === s.key ? "Saving…" : savedKey === s.key ? "Saved ✓" : "Save"}
                       </button>
                     </div>
                     {fieldError[s.key] && <p className="error-text" style={{ margin: 0 }}>{fieldError[s.key]}</p>}

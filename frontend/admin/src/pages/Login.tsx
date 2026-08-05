@@ -57,6 +57,12 @@ export function Login() {
         <button type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
         {error && <p className="error-text">{error}</p>}
       </form>
+
+      <div className="admin-demo-hint">
+        <span className="admin-demo-hint-title">Just want to look around?</span>
+        <span className="admin-demo-hint-creds">demo.admin@local · 123</span>
+        <span className="admin-demo-hint-note">Not a real account — signs straight into the console.</span>
+      </div>
     </div>
   );
 }

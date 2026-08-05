@@ -8,6 +8,8 @@ import { SupportSettings } from "./pages/SupportSettings";
 import { ProjectSettings } from "./pages/ProjectSettings";
 import { Sidebar } from "./components/Sidebar";
 import { api } from "./api/client";
+import { SessionProvider } from "./context/SessionContext";
+import { DemoBanner } from "./components/DemoBanner";
 
 /**
  * Route shell — deliberately minimal. As the admin console grows
@@ -21,10 +23,15 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="app-shell">
-      <Sidebar />
-      {children}
-    </div>
+    <SessionProvider>
+      <div className="app-shell">
+        <Sidebar />
+        <div>
+          <DemoBanner />
+          {children}
+        </div>
+      </div>
+    </SessionProvider>
   );
 }
 

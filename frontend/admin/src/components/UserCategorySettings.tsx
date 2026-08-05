@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { useSession } from "../context/SessionContext";
 
 interface UserSettingDef {
   key: string;
@@ -10,9 +11,6 @@ interface UserSettingDef {
   placeholder: string | null;
   options: string[] | null;
 }
-
-const SAVE_DISABLED_MESSAGE =
-  "Not authorized to save yet — per-user settings aren't wired to the agent, so saving is disabled for now.";
 
 function validateUserSetting(s: UserSettingDef, raw: any): string | null {
   if (s.value_type === "number" && raw !== "" && Number.isNaN(Number(raw))) return `${s.label} must be a number.`;
@@ -30,12 +28,14 @@ function validateUserSetting(s: UserSettingDef, raw: any): string | null {
  * rather than revealing them for the first time.
  */
 export function UserCategorySettings({ category, title, subtitle }: { category: string; title: string; subtitle: string }) {
+  const { isDemo } = useSession();
   const [knownEmails, setKnownEmails] = useState<string[]>([]);
   const [defs, setDefs] = useState<UserSettingDef[]>([]);
   const [selectedEmail, setSelectedEmail] = useState("");
   const [values, setValues] = useState<Record<string, any>>({});
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   const [fieldError, setFieldError] = useState<Record<string, string>>({});
+  const [savedKey, setSavedKey] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -70,8 +70,13 @@ export function UserCategorySettings({ category, title, subtitle }: { category: 
     return def.value_type === "boolean" ? false : "";
   }
 
-  function save(def: UserSettingDef) {
+  async function save(def: UserSettingDef) {
     setError("");
+    setSavedKey(null);
+    if (!selectedEmail) {
+      setFieldError({ ...fieldError, [def.key]: "Pick a user above first." });
+      return;
+    }
     const raw = draftFor(def);
     const problem = validateUserSetting(def, raw);
     if (problem) {
@@ -79,11 +84,25 @@ export function UserCategorySettings({ category, title, subtitle }: { category: 
       return;
     }
     setFieldError({ ...fieldError, [def.key]: "" });
+
+    if (isDemo) {
+      setError("Demo login — viewing only, saving is disabled.");
+      return;
+    }
+
+    const value = def.value_type === "number" ? Number(raw) : def.value_type === "boolean" ? Boolean(raw) : raw;
     setSavingKey(def.key);
-    setTimeout(() => {
+    try {
+      await api.updateUserSetting(selectedEmail, def.key, value);
+      setValues((v) => ({ ...v, [def.key]: value }));
+      setDrafts((d) => { const next = { ...d }; delete next[def.key]; return next; });
+      setSavedKey(def.key);
+      setTimeout(() => setSavedKey((k) => (k === def.key ? null : k)), 1500);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
       setSavingKey(null);
-      setError(SAVE_DISABLED_MESSAGE);
-    }, 400);
+    }
   }
 
   const listId = `known-users-${category}`;
@@ -151,7 +170,7 @@ export function UserCategorySettings({ category, title, subtitle }: { category: 
                   />
                 )}
                 <button className="save-btn" disabled={savingKey === d.key} onClick={() => save(d)}>
-                  {savingKey === d.key ? "Saving…" : "Save"}
+                  {savingKey === d.key ? "Saving…" : savedKey === d.key ? "Saved ✓" : "Save"}
                 </button>
               </div>
               {fieldError[d.key] && <p className="error-text" style={{ margin: 0 }}>{fieldError[d.key]}</p>}
