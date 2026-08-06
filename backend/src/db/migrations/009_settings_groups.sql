@@ -30,7 +30,7 @@ insert into settings (key, value, label, description, value_type, category, plac
   ('smtp_encryption', '"TLS"', 'Encryption', null, 'select', 'email', null, '["None", "SSL", "TLS"]'),
   ('smtp_username', '""', 'SMTP username', null, 'string', 'email', 'notifications@yourcompany.com', null),
   ('smtp_password', '""', 'SMTP password', null, 'password', 'email', '••••••••', null),
-  ('smtp_from_name', '""', 'From name', 'Display name on outgoing emails', 'string', 'email', 'Zyte ERP Agent', null),
+  ('smtp_from_name', '""', 'From name', 'Display name on outgoing emails', 'string', 'email', 'Noviz ERP Agent', null),
   ('smtp_from_email', '""', 'From email', null, 'string', 'email', 'no-reply@yourcompany.com', null),
 
   -- ---- Support portal ----
