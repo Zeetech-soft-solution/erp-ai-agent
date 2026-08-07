@@ -2,9 +2,11 @@ import { RuleSet } from "../../../core/types";
 import { systemConnector } from "../../system.config";
 
 /**
- * Selling module rules — free tier: only the rule covering quotation
- * creation (the only quotation action this tier exposes — see
- * entities.ts, which has no update operation). The extended rule set
+ * Selling module rules — kept as the one worked example of what a real
+ * business rule looks like in this codebase, even though free's only
+ * exposed quotation operation is now "list" (see entities.ts) so this
+ * particular rule (gated on "create") never actually fires here — it's
+ * reference material, not a live check. The extended rule set
  * (status-change gating, and every other module's business rules) is
  * a pro-tier capability.
  */

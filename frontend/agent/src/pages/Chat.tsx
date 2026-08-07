@@ -71,7 +71,7 @@ export function Chat() {
       <div className="message-list">
         {!turns.length && (
           <div className="bubble-agent">
-            Ask me about leads, opportunities, orders, or anything else your role has access to.
+            Ask me about your quotations, or anything else your role has access to.
           </div>
         )}
         {turns.map((t) => (

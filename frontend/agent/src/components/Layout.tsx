@@ -34,7 +34,7 @@ function BrandMark() {
  *  fresh each time by design - it's a live session, not a draft).
  *
  * The brand and "Chat" used to be two separate header elements; they're
- * now one clickable heading (Zyte Process Agent, with the Zeetech mark) -
+ * now one clickable heading (Noviz Process Agent, with the Zeetech mark) -
  * Chat IS the home surface, not a tab alongside the brand. The workflow
  * tabs (Notifications/Email/Support/Projects) live in a left rail against
  * the content area's border instead of the top nav - they're feeds that
@@ -65,7 +65,7 @@ export function Layout() {
       <header className="agent-header">
         <NavLink to="/chat" className="brand-link">
           <BrandMark />
-          <span className="brand">Zyte <span>Process Agent</span></span>
+          <span className="brand">Noviz <span>Process Agent</span></span>
         </NavLink>
         <button
           onClick={async () => { await api.logout().catch(() => {}); api.clearToken(); window.location.href = `${import.meta.env.BASE_URL}login`; }}
@@ -77,7 +77,7 @@ export function Layout() {
       <div className="agent-shell-body">
         <nav className="side-rail">
           <NavLink to="/chat" className={({ isActive }) => `side-rail-link side-rail-link-primary${isActive ? " active" : ""}`}>
-            Zyte Chat
+            Noviz Chat
           </NavLink>
           <div className="side-rail-divider" />
           {WORKFLOW_TABS.map((t) => (

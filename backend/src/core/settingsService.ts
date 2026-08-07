@@ -61,7 +61,17 @@ class SettingsService {
   async get<T = any>(key: string, fallback: T): Promise<T> {
     const rows = await this.list();
     const row = rows.find((r) => r.key === key);
-    return row ? (row.value as T) : fallback;
+    // A row existing is not the same as it holding a real value - migration
+    // 012_llm_and_erp_settings.sql seeds llm_base_url/llm_api_key as "" by
+    // design (placeholder until an admin fills them in), and the old
+    // `row ? row.value : fallback` treated that seeded blank the same as a
+    // real admin-set value, permanently shadowing the correct .env fallback
+    // on every fresh deploy until someone manually retyped it into the
+    // admin UI. Confirmed live 2026-08-07: this broke OpenAI calls with
+    // "Invalid URL" (empty llm_base_url) on a fresh install that had a
+    // perfectly valid LLM_API_KEY/LLM_BASE_URL in .env the whole time.
+    if (!row || row.value === "" || row.value === null || row.value === undefined) return fallback;
+    return row.value as T;
   }
 
   async update(key: string, value: any, adminUser: string): Promise<SettingRow> {

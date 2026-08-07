@@ -13,7 +13,7 @@ export function Composer({ onSend, disabled }: { onSend: (text: string) => void;
   return (
     <form className="composer" onSubmit={submit}>
       <input
-        placeholder="Ask about leads, opportunities, orders…"
+        placeholder="Ask about your quotations…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         disabled={disabled}
