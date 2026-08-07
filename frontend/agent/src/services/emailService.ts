@@ -60,18 +60,15 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 export const emailService = {
   list: (): Promise<EmailItem[]> => delay([...SAMPLE]),
   // Real, not sample: whatever the LLM has actually sent via the
-  // email.send tool (see backend routes/agent.routes.ts GET /sent-emails,
-  // providers/mail/stubMailboxConnector.ts). This is what makes a
-  // confirmed reply's outcome visible in the Sent view.
+  // email.send tool. This is what makes a confirmed reply's outcome
+  // visible in the Sent view.
   sent: async (): Promise<SentEmailItem[]> => {
     const { emails } = await api.sentEmails();
     return emails;
   },
   // Real send, direct - calls the email.send tool the same way the LLM
-  // would, just without a chat turn in between. Still goes through
-  // core/businessRuleEngine.ts and providers/mail/stubMailboxConnector.ts
-  // exactly like a chat-confirmed send does (see that file for what "real"
-  // means here: durably recorded, no outbound delivery yet).
+  // would, just without a chat turn in between. Goes through the same
+  // rule checks as a chat-confirmed send does.
   send: async (args: { to: string; subject: string; body: string }): Promise<SentEmailItem> => {
     const { data } = await api.callTool("email.send", args);
     return data.sent;

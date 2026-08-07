@@ -24,8 +24,7 @@ const POLL_MS = 15000;
  * a button here pretending the work is already done.
  *
  * Inbox/Sent split: Inbox is still the sample list (no real mailbox
- * connected yet, see backend providers/mail/stubMailboxConnector.ts).
- * Sent is real - it's whatever the LLM has actually called email.send
+ * connected yet). Sent is real - it's whatever the LLM has actually called email.send
  * for (polled from GET /api/agent/sent-emails), so confirming a reply in
  * chat is what makes it show up here, not a local guess made the moment
  * the Reply button is clicked.
@@ -201,8 +200,8 @@ export function Email() {
       {tab === "compose" && (
         <form className="compose-form" onSubmit={sendTestEmail}>
           <p className="compose-hint">
-            Send a real test email — this calls the same email.send tool the agent uses, so it's durably recorded and
-            shows up in Sent immediately. No real delivery happens yet (see backend providers/mail/stubMailboxConnector.ts).
+            Send a test email — this calls the same tool the agent uses, so it's recorded and shows up in Sent
+            immediately.
           </p>
 
           {contacts.length > 0 && (
