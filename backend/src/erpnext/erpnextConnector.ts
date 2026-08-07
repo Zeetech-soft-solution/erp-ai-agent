@@ -127,7 +127,7 @@ export class ErpNextConnector implements SystemConnector {
     const mapping = ERPNEXT_REPORT_MAP[reportKey];
     if (!mapping) throw new Error(`No ERPNext report mapping for "${reportKey}"`);
 
-    const nativeFilters: Record<string, any> = {};
+    const nativeFilters: Record<string, any> = { ...mapping.defaultFilters };
     for (const [canonical, value] of Object.entries(filters || {})) {
       const native = mapping.filterFieldMap[canonical];
       if (native) nativeFilters[native] = value;
@@ -140,6 +140,26 @@ export class ErpNextConnector implements SystemConnector {
     });
 
     return this.normalizeReportResult(res.data.message);
+  }
+
+  async getDocumentPdf(entityKey: string, credential: UserCredential, id: string): Promise<{ filename: string; contentType: string; buffer: Buffer }> {
+    const mapping = ERPNEXT_ENTITY_MAP[entityKey];
+    if (!mapping) throw new Error(`No ERPNext entity mapping for "${entityKey}"`);
+    const client = this.clientFor(credential);
+    // frappe.utils.print_format.download_pdf: the same PDF generation
+    // ERPNext's own "Print" / "Download PDF" desk button calls — the
+    // user's own permissions on this doctype/record apply exactly as
+    // they would clicking that button themselves, since this request
+    // carries their real credential, never a service account.
+    const res = await client.get("/api/method/frappe.utils.print_format.download_pdf", {
+      params: { doctype: mapping.doctype, name: id, no_letterhead: 0 },
+      responseType: "arraybuffer",
+    });
+    return {
+      filename: `${id}.pdf`,
+      contentType: (res.headers["content-type"] as string) || "application/pdf",
+      buffer: Buffer.from(res.data),
+    };
   }
 
   /** ERPNext's report output shape varies (columns as strings vs

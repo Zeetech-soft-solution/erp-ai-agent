@@ -27,7 +27,24 @@ or re-describe those same records one by one (no numbered/bulleted list of
 them, no repeating each row's fields in prose). Keep your reply to one short
 sentence — how many results, and anything the table can't show (e.g. "Found 4
 customers starting with Shree.") — and let the table carry the actual data.
-This does not apply to "render":"none": with nothing tabular, write normally.`;
+This does not apply to "render":"none": with nothing tabular, write normally.
+
+When the user asks for a PDF, invoice copy, printable document, or similar for a
+specific record you already have the id for (from a prior list/get call), call
+document.get_pdf with that entityKey and id, then end your reply with
+DISPLAY_INTENT: {"render":"document"}. A real download button is rendered
+separately from the tool result — your own message must be ONE short sentence
+only ("Here's the PDF for SAL-QTN-2026-00001.") and must NEVER include a URL,
+markdown link, or fabricated domain name of your own — you don't know the real
+one, and writing a fake one is worse than writing none.
+
+Whenever you show details of a SINGLE record (a *.get call, or a *.list that
+resolved to exactly one row — never a list of many), proactively add a next
+step offering its PDF even if the user didn't ask for one, e.g.
+"next_steps":["Get PDF of this quotation"] — document.get_pdf itself is only
+called once that next step is actually clicked, same as any other next step.
+Don't offer this for a multi-row list result — a PDF is for one record, not
+a table of them.`;
 
 export class ReasoningEngine {
   constructor(
@@ -122,6 +139,18 @@ export class ReasoningEngine {
   ): AgentResponse {
     const meta = { modules_used: modulesUsed, tools_used: toolsUsed, role_context: session.erpnext_roles };
 
+    // document.get_pdf's result shape ({ document: {...} }) is
+    // structurally different from every other tool's tabular data — no
+    // renderer applies, it's a single downloadable link, not rows.
+    // Deliberately NOT gated on displayIntent?.render === "document":
+    // confirmed live, the LLM reliably calls the tool but inconsistently
+    // remembers to also emit the matching DISPLAY_INTENT line, and
+    // "does the result have a .document field" is already an
+    // unambiguous signal on its own — no other tool ever returns this
+    // shape, so there's nothing to disambiguate against.
+    if (data?.document) {
+      return { type: "document", message, document: data.document, meta };
+    }
     if (data && displayIntent) {
       const html = rendererRegistry.render(displayIntent.render, data, displayIntent);
       return { type: "report", message, data, html, meta };

@@ -97,7 +97,7 @@ export interface LLMProvider {
 export type AgentResponseType = "text" | "report" | "document" | "action_result";
 
 export interface DisplayIntent {
-  render: "table" | "chart" | "cards" | "timeline" | "raw" | "none";
+  render: "table" | "chart" | "cards" | "timeline" | "raw" | "none" | "document";
   highlight?: string[];
   next_steps?: string[];
 }
@@ -195,6 +195,14 @@ export interface SystemConnector {
    *  mechanism is (ERPNext's query report runner, a SAP report ID,
    *  a raw SQL view, whatever). */
   runReport(reportKey: string, credential: UserCredential, filters?: Record<string, any>): Promise<any[]>;
+
+  /** Renders a single record as a PDF via that system's own print/
+   *  document-generation engine (ERPNext: Print Format -> PDF) and
+   *  returns the raw bytes — what "give me the PDF of this invoice"
+   *  resolves to. Called from a document-download route (see
+   *  routes/agent.routes.ts), never fed into the LLM's own context —
+   *  binary data has no business going through a tool-call round trip. */
+  getDocumentPdf(entityKey: string, credential: UserCredential, id: string): Promise<{ filename: string; contentType: string; buffer: Buffer }>;
 }
 
 // ---- Report config — the ERP-agnostic description of a named report,
@@ -222,6 +230,16 @@ export interface EntityConfig {
   createFields?: string[];        // canonical fields accepted on create
   operations?: ("list" | "get" | "create" | "update")[];
   description?: string;
+  // Child-table line items (a Sales Order's Items table, a Quotation's
+  // Items table...) — the ONE structural gap every entity had until
+  // this was added: every create tool was header-only, so "create a
+  // sales order" could never actually carry the items being ordered.
+  // canonicalField is the top-level key the LLM sends an array under
+  // (usually "items"); itemFields are the canonical keys allowed on
+  // each row. Each connector's entity map resolves both the row shape
+  // and the native child-table name — same canonical-only discipline
+  // as every other field here.
+  lineItems?: { canonicalField: string; itemFields: string[]; description?: string };
 }
 
 // ---- Workflow / state machine — THE universal pattern behind "complex

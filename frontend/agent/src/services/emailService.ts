@@ -67,4 +67,13 @@ export const emailService = {
     const { emails } = await api.sentEmails();
     return emails;
   },
+  // Real send, direct - calls the email.send tool the same way the LLM
+  // would, just without a chat turn in between. Still goes through
+  // core/businessRuleEngine.ts and providers/mail/stubMailboxConnector.ts
+  // exactly like a chat-confirmed send does (see that file for what "real"
+  // means here: durably recorded, no outbound delivery yet).
+  send: async (args: { to: string; subject: string; body: string }): Promise<SentEmailItem> => {
+    const { data } = await api.callTool("email.send", args);
+    return data.sent;
+  },
 };

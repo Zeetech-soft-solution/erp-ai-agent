@@ -24,7 +24,9 @@ function renderTable(data: any, intent: DisplayIntent): string {
 
   return `
 <div class="erp-agent-report">
-  <table class="erp-agent-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+  <div class="erp-agent-table-scroll">
+    <table class="erp-agent-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+  </div>
   ${renderNextSteps(intent)}
 </div>`.trim();
 }

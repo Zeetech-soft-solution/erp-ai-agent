@@ -11,6 +11,7 @@ import { asyncHandler } from "../core/asyncHandler";
 import { alertStore } from "../core/alertStore";
 import { mailboxConnector } from "../providers/mail/stubMailboxConnector";
 import { workflowActionStore } from "../core/workflowActionStore";
+import { systemConnector } from "../config/system.config";
 
 const interactionLogger = new PostgresInteractionLogger();
 const engine = new ReasoningEngine(
@@ -71,6 +72,21 @@ router.get("/workflow-actions", asyncHandler(async (req: AuthedRequest, res) => 
   const module = typeof req.query.module === "string" ? req.query.module : undefined;
   const actions = await workflowActionStore.list(req.session!.sub, module);
   res.json({ actions });
+}));
+
+// The URL document.get_pdf hands back (see modules/documents/index.ts)
+// resolves here — a plain <a href> can't carry our Authorization
+// header, so the frontend fetches this with the header attached and
+// turns the response into a downloadable Blob itself, same auth
+// discipline as every other route, just no bearer-token-in-URL.
+router.get("/document-pdf", asyncHandler(async (req: AuthedRequest, res) => {
+  const entityKey = typeof req.query.entityKey === "string" ? req.query.entityKey : undefined;
+  const id = typeof req.query.id === "string" ? req.query.id : undefined;
+  if (!entityKey || !id) return res.status(400).json({ error: "entityKey and id are required" });
+  const { filename, contentType, buffer } = await systemConnector.getDocumentPdf(entityKey, req.session!.credential, id);
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(buffer);
 }));
 
 router.get("/capabilities", (req: AuthedRequest, res) => {

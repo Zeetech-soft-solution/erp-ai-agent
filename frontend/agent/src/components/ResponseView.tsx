@@ -18,10 +18,25 @@ function humanizeToolName(tool: string): string {
 
 export function ResponseView({ response, onNextStep }: { response: AgentResponse; onNextStep: (text: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   function handleClick(e: React.MouseEvent) {
     const target = (e.target as HTMLElement).closest(".erp-agent-next-step") as HTMLElement | null;
     if (target?.dataset.action) onNextStep(target.dataset.action);
+  }
+
+  async function handleDownload() {
+    if (!response.document?.url || downloading) return;
+    setDownloadError("");
+    setDownloading(true);
+    try {
+      await api.downloadFile(response.document.url, `${response.document.name}.pdf`);
+    } catch (err: any) {
+      setDownloadError(err.message || "Download failed");
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -35,7 +50,12 @@ export function ResponseView({ response, onNextStep }: { response: AgentResponse
       {response.type === "document" && response.document && (
         <div className="document-card">
           <span>{response.document.name}</span>
-          {response.document.url && <a href={response.document.url}>Download</a>}
+          {response.document.url && (
+            <button type="button" className="action-btn small" onClick={handleDownload} disabled={downloading}>
+              {downloading ? "Downloading…" : "Download PDF"}
+            </button>
+          )}
+          {downloadError && <p className="error-text">{downloadError}</p>}
         </div>
       )}
 

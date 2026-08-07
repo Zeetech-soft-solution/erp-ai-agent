@@ -21,6 +21,28 @@ async function request(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
+/** Fetches an authenticated binary response (a PDF, e.g.) and triggers
+ *  a browser download — a plain <a href> can't carry the Authorization
+ *  header this needs, so this does the fetch itself and hands the
+ *  browser a short-lived object URL instead. */
+async function downloadFile(path: string, filename: string) {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed: ${res.status}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export const api = {
   loginWithPassword: (email: string, password: string) =>
     request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -35,7 +57,13 @@ export const api = {
     request(`/api/agent/notifications${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   markNotificationRead: (id: string) => request(`/api/agent/notifications/${id}/read`, { method: "POST" }),
   sentEmails: () => request("/api/agent/sent-emails"),
+  // Direct tool call, bypassing the chat/LLM loop entirely - used by the
+  // Email tab's Compose form so a demo user can send a real test email
+  // without having to type a natural-language prompt first.
+  callTool: (name: string, args: Record<string, unknown>) =>
+    request(`/api/tools/${name}`, { method: "POST", body: JSON.stringify(args) }),
   workflowActions: (module: string) => request(`/api/agent/workflow-actions?module=${encodeURIComponent(module)}`),
+  downloadFile,
   setToken: (token: string) => localStorage.setItem("erp_agent_token", token),
   clearToken: () => localStorage.removeItem("erp_agent_token"),
   isLoggedIn: () => !!getToken(),

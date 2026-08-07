@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { emailService } from "../services/emailService";
+import { api } from "../api/client";
 import { EmailItem, SentEmailItem } from "../services/types";
 import { StatusBadge, formatRelativeTime } from "../components/StatusBadge";
+
+interface ContactOption {
+  id: string;
+  display_name: string;
+  email: string | null;
+  company_name: string | null;
+}
 
 const POLL_MS = 15000;
 
@@ -23,16 +31,46 @@ const POLL_MS = 15000;
  * the Reply button is clicked.
  */
 export function Email() {
-  const [tab, setTab] = useState<"inbox" | "sent">("inbox");
+  const [tab, setTab] = useState<"inbox" | "sent" | "compose">("inbox");
   const [items, setItems] = useState<EmailItem[]>([]);
   const [sent, setSent] = useState<SentEmailItem[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const pollStarted = useRef(false);
+  const loadSentRef = useRef<() => void>(() => {});
+
+  const [composeTo, setComposeTo] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeError, setComposeError] = useState("");
+  const [composeSuccess, setComposeSuccess] = useState(false);
+  const [contacts, setContacts] = useState<ContactOption[]>([]);
+  const [selectedContactId, setSelectedContactId] = useState("");
 
   useEffect(() => {
     emailService.list().then((r) => { setItems(r); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+    // Contact, not customer.list: Customer.email_id/mobile_no are Frappe
+    // "Read Only" fetched fields that come back blank on a direct API
+    // read in this dataset (they're populated from a linked primary
+    // Contact, not stored on Customer itself) - confirmed live, Customer
+    // rows all had email: "". Contact has real, populated addresses.
+    // Best-effort either way - not every role has contact.list, and
+    // that's fine: the To field stays a plain free-text input regardless
+    // (send to anyone).
+    api.callTool("contact.list", { limit: 100 })
+      .then(({ data }) => setContacts((data || []).filter((c: ContactOption) => c.email)))
+      .catch(() => {});
+  }, []);
+
+  function pickContact(id: string) {
+    setSelectedContactId(id);
+    const c = contacts.find((x) => x.id === id);
+    if (c?.email) setComposeTo(c.email);
+  }
 
   useEffect(() => {
     if (pollStarted.current) return;
@@ -41,10 +79,31 @@ export function Email() {
     function loadSent() {
       emailService.sent().then((r) => { if (!cancelled) setSent(r); }).catch(() => {});
     }
+    loadSentRef.current = loadSent;
     loadSent();
     const interval = setInterval(loadSent, POLL_MS);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  async function sendTestEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setComposeError("");
+    setComposeSuccess(false);
+    setComposeSending(true);
+    try {
+      await emailService.send({ to: composeTo, subject: composeSubject, body: composeBody });
+      setComposeTo("");
+      setComposeSubject("");
+      setComposeBody("");
+      setComposeSuccess(true);
+      loadSentRef.current(); // pull the Sent view forward immediately, don't wait for the 15s poll
+      setTab("sent");
+    } catch (err: any) {
+      setComposeError(err.message || "Send failed");
+    } finally {
+      setComposeSending(false);
+    }
+  }
 
   function goToChat(e: EmailItem, prompt: string, nextStatus: EmailItem["status"]) {
     setItems((prev) => prev.map((x) => (x.id === e.id ? { ...x, status: nextStatus } : x)));
@@ -77,6 +136,9 @@ export function Email() {
         </button>
         <button type="button" className={`subtab-btn${tab === "sent" ? " active" : ""}`} onClick={() => setTab("sent")}>
           Sent<span className="subtab-count">{sent.length}</span>
+        </button>
+        <button type="button" className={`subtab-btn${tab === "compose" ? " active" : ""}`} onClick={() => setTab("compose")}>
+          Compose
         </button>
       </div>
 
@@ -134,6 +196,53 @@ export function Email() {
             </div>
           ))}
         </div>
+      )}
+
+      {tab === "compose" && (
+        <form className="compose-form" onSubmit={sendTestEmail}>
+          <p className="compose-hint">
+            Send a real test email — this calls the same email.send tool the agent uses, so it's durably recorded and
+            shows up in Sent immediately. No real delivery happens yet (see backend providers/mail/stubMailboxConnector.ts).
+          </p>
+
+          {contacts.length > 0 && (
+            <select value={selectedContactId} onChange={(e) => pickContact(e.target.value)}>
+              <option value="">Pick a contact (or type any address below)…</option>
+              {contacts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.display_name}{c.company_name ? ` (${c.company_name})` : ""} — {c.email}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <input
+            type="email"
+            placeholder="To (any email address)"
+            value={composeTo}
+            onChange={(e) => setComposeTo(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Subject"
+            value={composeSubject}
+            onChange={(e) => setComposeSubject(e.target.value)}
+            required
+          />
+          <textarea
+            placeholder="Body"
+            value={composeBody}
+            onChange={(e) => setComposeBody(e.target.value)}
+            required
+          />
+
+          <button type="submit" className="action-btn" disabled={composeSending}>
+            {composeSending ? "Sending…" : "Send test email"}
+          </button>
+          {composeError && <p className="error-text">{composeError}</p>}
+          {composeSuccess && <p className="success-text">Sent — check the Sent tab.</p>}
+        </form>
       )}
     </div>
   );

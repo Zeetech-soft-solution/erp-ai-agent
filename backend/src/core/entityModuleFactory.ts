@@ -72,16 +72,27 @@ export function buildEntityModule(config: EntityConfig): MCPModule {
   }
 
   if (ops.includes("create")) {
+    const properties: Record<string, any> = Object.fromEntries((config.createFields || config.canonicalFields).map((f) => [f, {}]));
+    if (config.lineItems) {
+      const { canonicalField, itemFields, description } = config.lineItems;
+      properties[canonicalField] = {
+        type: "array",
+        description:
+          description ||
+          `Line items — at least one required. Each item is an object with: ${itemFields.join(", ")}. ` +
+          `"rate" is NOT auto-fetched from a price list here — always set it explicitly (look it up via ` +
+          `item_price.list first if you don't already know it), or the line — and the whole document's total — ` +
+          `will silently price at 0.`,
+        items: { type: "object", properties: Object.fromEntries(itemFields.map((f) => [f, {}])) },
+      };
+    }
     tools.push({
       name: toToolName(config.toolPrefix, "create"),
       description: `Create a new ${config.entityKey} record`,
       module: config.module,
       entityKey: config.entityKey,
       ruleAction: "create",
-      parameters: {
-        type: "object",
-        properties: Object.fromEntries((config.createFields || config.canonicalFields).map((f) => [f, {}])),
-      },
+      parameters: { type: "object", properties },
       handler: (args, session) => systemConnector.create(config.entityKey, session.credential, args),
     });
   }

@@ -33,6 +33,7 @@ body {
 .login-shell {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 1rem;
@@ -66,6 +67,89 @@ body {
   font-size: 12px; font-weight: 500; color: var(--ink-secondary); cursor: pointer;
 }
 .login-mode-toggle button.active { background: var(--bg-surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+
+/* ---- Demo credentials: prominent trigger button near sign-in + modal ---- */
+.demo-trigger-btn {
+  display: block; width: 100%; max-width: 340px; margin: 18px auto 0; padding: 11px;
+  border-radius: var(--radius); border: 1px solid var(--accent); background: var(--accent-bg);
+  color: var(--accent); font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.demo-trigger-btn:hover { background: var(--accent); color: white; }
+
+.demo-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 20, 17, 0.45); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.demo-modal {
+  position: relative; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+  background: var(--bg-surface); border-radius: 14px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.demo-modal h2 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.demo-modal > p { color: var(--ink-secondary); font-size: 13px; line-height: 1.5; margin: 0 0 18px; }
+.demo-modal > p code {
+  font-family: var(--font-mono); font-size: 12px; background: var(--accent-bg); color: var(--accent);
+  padding: 1px 6px; border-radius: 4px;
+}
+.demo-modal-close {
+  position: absolute; top: 16px; right: 16px; border: none; background: none; cursor: pointer;
+  color: var(--ink-muted); font-size: 14px; line-height: 1; padding: 4px;
+}
+.demo-modal-close:hover { color: var(--ink); }
+
+.demo-user-list { display: flex; flex-direction: column; gap: 10px; }
+.demo-user-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+}
+.demo-user-main { min-width: 0; }
+.demo-user-top { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.demo-user-name { font-weight: 600; font-size: 13.5px; }
+.demo-role-tag {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); background: var(--accent-bg);
+  padding: 2px 8px; border-radius: 999px;
+}
+.demo-user-dept { font-size: 12px; color: var(--ink-secondary); margin-bottom: 4px; }
+.demo-user-access { font-size: 12px; color: var(--ink-muted); margin-bottom: 6px; }
+.demo-user-email-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.demo-user-email { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-secondary); word-break: break-all; }
+.demo-copy-btn {
+  display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); background: var(--bg-page);
+  color: var(--ink-secondary); font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 999px; cursor: pointer;
+  flex-shrink: 0; white-space: nowrap;
+}
+.demo-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.demo-copy-btn.inline {
+  border: none; background: none; padding: 0; color: var(--ink-secondary); font-family: var(--font-mono); font-size: 11.5px;
+}
+.demo-copy-btn.inline:hover { color: var(--accent); }
+.demo-signin-btn { flex-shrink: 0; }
+
+/* ---- Admin console: small, understated, bottom of the page ---- */
+.admin-console-card {
+  display: block; width: 100%; max-width: 340px; margin: 12px auto 0; padding: 8px;
+  border-radius: var(--radius); border: 2px solid var(--border); background: none;
+  color: var(--ink-secondary); font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  text-align: center; text-decoration: none;
+}
+.admin-console-card:hover { border-color: var(--ink-secondary); color: var(--ink); }
+
+/* ---- Live ERP: same look as the demo-credentials button, solid on hover ---- */
+.erp-live-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; max-width: 340px;
+  margin: 10px auto 0; padding: 11px 14px; border-radius: var(--radius); text-decoration: none;
+  border: 1px solid var(--accent); background: var(--accent-bg); color: var(--accent);
+  transition: background 0.15s, color 0.15s;
+}
+.erp-live-card:hover { background: var(--accent); color: white; }
+.erp-live-card:hover .erp-live-icon { background: rgba(255,255,255,0.2); }
+.erp-live-card:hover .erp-live-sub { color: rgba(255,255,255,0.85); }
+.erp-live-icon {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 999px; background: var(--bg-surface);
+  display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+}
+.erp-live-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.erp-live-title { font-family: var(--font-display); font-size: 13.5px; font-weight: 600; }
+.erp-live-sub { font-size: 11.5px; color: var(--ink-secondary); line-height: 1.35; transition: color 0.15s; }
 
 /* ---- App shell: responsive at 900px ---- */
 .agent-shell {
@@ -156,17 +240,36 @@ body {
 .feedback-btn.active { opacity: 1; border-color: var(--border); background: var(--accent-bg); }
 
 /* server-rendered report HTML lives inside this wrapper */
-.agent-report-html { margin-top: 8px; }
-.agent-report-html table.erp-agent-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.agent-report-html th, .agent-report-html td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
-.agent-report-html th { color: var(--ink-secondary); font-weight: 500; font-size: 12px; }
-.agent-report-html tr.erp-agent-row-highlight { background: var(--accent-bg); }
+.agent-report-html { margin-top: 10px; }
+.erp-agent-table-scroll {
+  overflow-x: auto; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.agent-report-html table.erp-agent-table {
+  width: 100%; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;
+}
+.agent-report-html th, .agent-report-html td {
+  text-align: left; padding: 9px 14px; white-space: nowrap;
+}
+.agent-report-html td { border-top: 1px solid var(--border); }
+.agent-report-html th {
+  color: var(--ink-secondary); font-weight: 600; font-size: 11.5px; letter-spacing: 0.02em;
+  text-transform: uppercase; background: var(--bg-page); position: sticky; top: 0;
+}
+.agent-report-html thead th:first-child { border-top-left-radius: 11px; }
+.agent-report-html thead th:last-child { border-top-right-radius: 11px; }
+.agent-report-html tbody tr:hover td { background: var(--bg-page); }
+.agent-report-html tr.erp-agent-row-highlight td { background: var(--accent-bg); }
+.agent-report-html tr.erp-agent-row-highlight:hover td { background: var(--accent-bg); }
 .agent-report-html .erp-agent-next-steps { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
 .agent-report-html button.erp-agent-next-step {
   font-family: var(--font-body); font-size: 12px; padding: 5px 10px; border-radius: 999px;
   border: 1px solid var(--accent); background: var(--accent-bg); color: var(--accent); cursor: pointer;
 }
-.agent-report-html .erp-agent-empty { color: var(--ink-muted); font-size: 13px; }
+.agent-report-html .erp-agent-empty {
+  color: var(--ink-muted); font-size: 13px; padding: 14px 16px; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--bg-surface);
+}
 
 .document-card {
   border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px;
@@ -263,6 +366,19 @@ body {
 .action-btn:disabled { opacity: 0.6; cursor: default; }
 .action-btn.secondary { background: var(--accent-bg); color: var(--accent); }
 .action-btn.small { padding: 5px 10px; font-size: 11.5px; }
+
+.compose-form {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; display: flex; flex-direction: column; gap: 10px; max-width: 480px;
+}
+.compose-form input, .compose-form textarea, .compose-form select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 13px; background: var(--bg-page);
+}
+.compose-form textarea { resize: vertical; min-height: 90px; }
+.compose-form .action-btn { align-self: flex-start; }
+.compose-hint { color: var(--ink-muted); font-size: 11.5px; margin: -2px 0 4px; }
+.success-text { color: var(--accent); font-size: 12px; margin-top: 2px; }
 
 .status-badge {
   display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 999px;

@@ -13,6 +13,15 @@
 export interface ErpNextReportMapping {
   reportName: string;
   filterFieldMap: Record<string, string>; // canonicalFilter -> ERPNext filter key
+  // Native ERPNext filter keys/values applied BEFORE the canonical ones
+  // above (which can still override) — for filters that are either
+  // always the same for this single-company deployment (company) or
+  // are ERPNext-specific report-mode toggles with no canonical
+  // equivalent (filter_based_on) that would only confuse the LLM if
+  // exposed directly. Verified against each report's real .js filter
+  // definitions, not assumed — see this file's git history for the
+  // exact fieldnames pulled from each report's source.
+  defaultFilters?: Record<string, any>;
 }
 
 export const ERPNEXT_REPORT_MAP: Record<string, ErpNextReportMapping> = {
