@@ -1,4 +1,12 @@
-# ERPNext webhook setup — Lead alerts
+# ERPNext webhook setup — Lead alerts (pattern reference)
+
+**Note**: Lead isn't a live capability in this tier (`crmModule.tools` is empty —
+see `docs/ARCHITECTURE.md`), so this specific example won't produce visible
+alerts today. It's kept as the worked reference for the mechanism itself,
+which is real and wired regardless of which entity uses it. Point it at
+`quotation` instead (the one live entity) by using an owner-equivalent
+field from `erpnext/entityMaps/selling.ts` — the webhook route itself is
+already generic, see step 4.
 
 How to configure ERPNext to push a proactive chat alert to a lead's owner via
 `POST /api/webhooks/erpnext/:doctype` (see `backend/src/routes/webhooks.routes.ts`). Delivered to

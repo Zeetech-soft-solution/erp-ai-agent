@@ -257,11 +257,14 @@ first place. This isn't specific to SAP either: the same steps apply
 to a healthcare EMR, a banking core, a logistics TMS, or any other
 system that has entities, roles, and processes.
 
-The `crm` module (hand-written, has real business logic like
-`update_lead_status`) follows the identical rule: it calls
-`systemConnector.list("lead", ...)`, never ERPNext's client directly —
-same discipline as the generic entity factory, just for entities that
-need custom logic beyond raw CRUD.
+Hand-written modules (like `modules/crm/`, for entities that need real
+business logic beyond raw CRUD) follow the identical rule: they call
+`systemConnector.<method>(...)`, never ERPNext's client directly — same
+discipline as the generic entity factory. **Free tier note**: `crmModule`
+ships with `tools: []` today — the folder and the pattern are here to
+read, but its business logic is a pro-tier capability. `modules/selling`
+(via the generic entity factory, not hand-written) is this tier's one
+populated example instead — see the taxonomy section below.
 
 ## The domain-agnostic core principle (read this first)
 
@@ -329,13 +332,17 @@ workflow exists). This maps directly onto how real approval chains
 work — junior roles can act up to a point, a narrower set of roles
 completes the sensitive step.
 
-The included example (`lead_qualification`: Open → Interested →
-Converted, with a Disqualify branch) proves the pattern against
-ERPNext today. The identical shape — swap `entityKey`, `statusField`,
-and the action names — describes a purchase approval chain, an
-insurance claim process, or a patient admission flow in a completely
-different vertical tomorrow. The engine doesn't change; only the
-config does.
+**Free tier note**: `config/workflows.config.ts` is intentionally empty
+(`WORKFLOW_CONFIGS: WorkflowDefinition[] = []`) in this tier — a working
+workflow (state machine + double-gated transitions, e.g. a lead or
+quotation approval chain) is a pro-tier capability. The engine
+(`core/workflowEngine.ts` / `core/workflowToolFactory.ts`) is fully
+present and domain-agnostic either way; only the config is empty. To add
+your own: populate `WORKFLOW_CONFIGS` with an entry naming a real
+`entityKey`, its `statusField`, and its transitions — the identical shape
+describes a purchase approval chain, an insurance claim process, or a
+patient admission flow in a completely different vertical. The engine
+doesn't change; only the config does.
 
 ## Standard ERP module taxonomy (the entity factory, organized)
 
@@ -379,16 +386,25 @@ erpnext/entityMaps/<same-module-names>.ts  <- ERPNext-specific mirror,
 erpnext/entityMap.ts        <- imports + spreads all of the above
 ```
 
-Only `crm` and `selling` have real `rules.ts`/`training.ts` content
-today — the rest are present as empty/stub files so every module's
-folder shape is complete and consistent from day one, ready for
-deeper (pro-tier) coverage without restructuring later. Each existing
-module's `entities.ts` also covers a bit more than its headline
-doctype (e.g. HR includes Payroll's Salary Slip and Recruitment's Job
-Opening alongside Employee/Leave/Attendance; Manufacturing includes Job
-Card and Production Plan alongside BOM/Work Order) — still just
-canonical entity shape, no rules/training depth, for the 6 modules
-that aren't crm/selling.
+**Almost every module is an empty stub in this tier.** Only `selling`
+has real content — one entity (`quotation`), one operation (`list`), and
+one reference rule in `rules.ts`. Every other module's `entities.ts`,
+`rules.ts`, and `training.ts` (including `crm`'s) exports an empty array,
+on purpose — the folder shape is complete and consistent, ready for
+pro-tier depth, but the business content itself isn't here.
+
+**If you want to add your own entity or rule**, that's exactly what these
+files are for:
+- `config/modules/<name>/entities.ts` — add an `EntityConfig` (see
+  `selling/entities.ts` for the shape) to get free `list/get/create/update`
+  tools generated automatically.
+- `config/modules/<name>/rules.ts` — add a `RuleSet` (see
+  `selling/rules.ts` for the shape) to gate create/update on real business
+  logic.
+- Then grant the new tool name(s) to a role in `config/roles.policy.ts` —
+  a tool existing never implies access.
+
+No other file needs to change for either addition.
 
 Support and Email are deliberately **not** part of this taxonomy today.
 They exist only as hand-written, external-system stubs
@@ -536,18 +552,17 @@ everything agent-side — never touches ERPNext's own database:
 
 ## Setup
 
+See `docs/TESTING_GUIDE.md` for the full step-by-step version. Short form:
+
 1. `cd backend && npm install`
 2. `cp .env.example .env` and fill in ERPNext URL/key, LLM key, `DATABASE_URL`, `ADMIN_ROLES`,
    and `CREDENTIAL_ENCRYPTION_KEY` (generate with the node command in the `.env.example` comment)
 3. Run every file in `db/migrations/` against your Postgres (with pgvector installed), in
-   filename order (`001_init.sql` ... `005_policy_documents.sql`)
+   filename order
 4. `npm run dev`
-5. Create ERPNext users with different roles (Sales User / Sales Manager /
-   System Manager) and confirm `/api/auth/login` returns different `allowed_tools`
-6. Test `/api/tools` (list), `/api/tools/crm.list_leads` (POST),
-   `/api/agent/prompt` with each role's token, and try
-   `/api/tools/lead_qualification.qualify` then `.convert` on a lead —
-   confirm a Sales User can qualify but gets a workflow error trying to convert
+5. Create one ERPNext user with the **Sales User** role and confirm `/api/auth/login`
+   returns `allowed_tools: ["quotation.list"]`
+6. Test `/api/tools` (list) and `/api/tools/quotation.list` (POST) with that token
 7. `cd ../frontend/admin && npm install && cp .env.example .env && npm run dev`
 8. Sign in with a `System Manager` (or whatever `ADMIN_ROLES` lists) user,
    confirm the module-status strip shows your active modules, edit a setting

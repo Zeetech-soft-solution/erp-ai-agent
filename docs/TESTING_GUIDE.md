@@ -5,6 +5,12 @@ curl command is given, run it before trusting the UI — if the API
 doesn't return what you expect, the UI won't either, and curl tells
 you exactly which layer is broken.
 
+This tier exposes exactly **one** capability end to end: `quotation.list`,
+granted to the **Sales User** role only. Every other module you'll see in
+the codebase (CRM, Buying, Stock, Accounting, HR, Manufacturing, Projects,
+Assets, Quality) is present as an empty, structurally-complete stub — that's
+expected, not a bug. This guide only tests what's actually live.
+
 ---
 
 ## Phase 0 — Prerequisites checklist
@@ -24,16 +30,15 @@ you exactly which layer is broken.
 2. Go to your user profile (top-right) → **API Access** → **Generate Keys**.
    Copy the **API Key** and **API Secret** immediately — the secret is
    shown once only.
-3. Create two test users (Users list → New):
-   - `sales.user@test.com` — assign role **Sales User**
-   - `sales.manager@test.com` — assign role **Sales Manager**
-   - (optional) a third with **System Manager** for admin testing
-4. Create at least 2-3 test **Lead** records manually in ERPNext, with
-   different `status` values (e.g. one "Open", one "Interested") — you
-   need real data to see the agent actually return something.
+3. Create one test user (Users list → New): `sales.user@test.com` — assign
+   role **Sales User**. (Optional: a second user with **System Manager**,
+   only needed if you also want to try the admin console.)
+4. Create at least 2-3 test **Quotation** records manually in ERPNext, for
+   different parties — you need real data to see the agent actually
+   return something.
 
 **Checkpoint**: note down `ERPNEXT_BASE_URL`, `ERPNEXT_API_KEY`,
-`ERPNEXT_API_SECRET`, and both test user passwords. You'll need all of
+`ERPNEXT_API_SECRET`, and the test user's password. You'll need all of
 these in the next steps.
 
 ---
@@ -51,16 +56,19 @@ or equivalent for your distro/version), then retry.
 
 ```bash
 cd backend
-psql erp_agent -f src/db/migrations/001_init.sql
-psql erp_agent -f src/db/migrations/002_settings.sql
-psql erp_agent -f src/db/migrations/003_user_credentials.sql
+for f in src/db/migrations/*.sql; do psql erp_agent -f "$f"; done
 ```
+
+Run every file in `src/db/migrations/` in filename order (`001_init.sql`
+through the highest-numbered file present) — each one is safe to run only
+once, in order.
 
 **Checkpoint**:
 ```bash
 psql erp_agent -c "\dt"
 ```
-should list `context_embeddings`, `interaction_log`, `settings`, `admin_audit_log`.
+should list (at least) `context_embeddings`, `interaction_log`, `settings`,
+`admin_audit_log`, `user_credentials`, `rule_evaluations`, `policy_documents`.
 
 ---
 
@@ -81,18 +89,16 @@ DATABASE_URL=postgres://<user>:<pass>@localhost:5432/erp_agent
 AGENT_JWT_SECRET=<any long random string>
 LLM_API_KEY=<your OpenAI key>
 ADMIN_ROLES=System Manager
+CREDENTIAL_ENCRYPTION_KEY=<generate with the node command in .env.example>
 ```
 
 ```bash
 npm run dev
 ```
 
-**Checkpoint** — console should print:
-```
-[bootstrap] Loaded modules: crm, context, tickets, email, item, sales_order, purchase_order, employee, sales_invoice, lead_qualification
-ERP Agent backend running on :4000
-```
-If a module is missing from that list, check `ACTIVE_MODULES` in `.env`.
+**Checkpoint** — console should print a line confirming the active modules
+and `ERP Agent backend running on :4000`. If a module you expect is
+missing, check `ACTIVE_MODULES` in `.env`.
 
 ### 3a. Health check
 ```bash
@@ -106,11 +112,11 @@ curl -X POST http://localhost:4000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"sales.user@test.com","password":"<their password>"}'
 ```
-Expect a JSON body with `token`, `roles: ["Sales User"]`, and an
-`allowed_tools` array. **If this fails**, the problem is
-`ERPNEXT_BASE_URL`/`API_KEY`/`API_SECRET` or the user's own password —
-not the agent code. Save the `token` value, you need it for every
-request below.
+Expect a JSON body with `token`, `roles: ["Sales User"]`, and
+`allowed_tools: ["quotation.list"]` — exactly one tool, nothing else. **If
+this fails**, the problem is `ERPNEXT_BASE_URL`/`API_KEY`/`API_SECRET` or
+the user's own password — not the agent code. Save the `token` value, you
+need it for every request below.
 
 ```bash
 export TOKEN="<paste token here>"
@@ -126,89 +132,37 @@ curl -X POST http://localhost:4000/api/auth/login \
 ```
 Should return the same shape as password login.
 
-**Impersonation check** — this is the part worth actually verifying,
-not just trusting: after calling `crm.create_lead` (step 3d/3e area)
-as `sales.user@test.com`, open that Lead in the ERPNext desk UI and
-check its **Owner** field. It should show `sales.user@test.com`, NOT
-your service account / Administrator. If it shows the service
-account, impersonation isn't working and every action will
-misattribute in ERPNext's own audit trail — flag this immediately,
-it's the core guarantee this whole auth design exists for.
-
-
 ### 3c. List tools this role can see
 ```bash
 curl http://localhost:4000/api/tools -H "Authorization: Bearer $TOKEN"
 ```
-Sales User should see `crm.list_leads`, `crm.get_lead`, `crm.create_lead`,
-`crm.list_opportunities`, `context.search`, `lead_qualification.qualify`,
-`lead_qualification.disqualify` — and nothing else (no `crm.create_opportunity`,
-no `tickets.*`, no `sales_order.*`).
+Sales User should see exactly `quotation.list` — nothing else. If you see
+more, or fewer, check `config/roles.policy.ts`.
 
-### 3d. Call a real ERPNext-backed tool
+### 3d. Call the one real ERPNext-backed tool
+```bash
+curl -X POST http://localhost:4000/api/tools/quotation.list \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
+```
+Expect your real ERPNext quotations back, with canonical field names
+(`id`, `party`, `status`, `total`, `date` — not ERPNext's raw doctype
+fields). **This is the actual end-to-end proof** that connector → entity
+map → ERPNext REST API all work.
+
+### 3e. Try a tool this tier doesn't expose at all
 ```bash
 curl -X POST http://localhost:4000/api/tools/crm.list_leads \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
 ```
-Expect your real ERPNext leads back, with canonical field names
-(`id`, `display_name`, `email`, `phone`, `status` — not ERPNext's raw
-`name`/`lead_name`). **This is the actual end-to-end proof** that
-connector → entity map → ERPNext REST API all work.
+Expect `403`/"not permitted" (or a "tool not found" style error) — CRM
+isn't wired to anything in this tier. If this ever returns real data, flag
+it immediately; it means the free/pro boundary has leaked.
 
-### 3e. Try a tool this role should NOT have
-```bash
-curl -X POST http://localhost:4000/api/tools/crm.create_opportunity \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
-```
-Expect `403` with a "not permitted" error. If a Sales User can call
-this, the role gate is broken — stop and flag it before testing anything else.
-
-### 3f. Workflow — the double-gate test
-```bash
-# Get a real lead id from step 3d's response, use it below
-curl -X POST http://localhost:4000/api/tools/lead_qualification.qualify \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"entity_id":"<a real lead id>"}'
-```
-Expect the lead's status to move to "Interested" (check in ERPNext directly to confirm).
-
-Now try converting as the same Sales User:
-```bash
-curl -X POST http://localhost:4000/api/tools/lead_qualification.convert \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"entity_id":"<same lead id>"}'
-```
-Expect `403` (tool not in Sales User's `allowed_tools` at all).
-
-Log in as `sales.manager@test.com`, get a new token, retry `.convert` —
-expect success this time. **This proves the role policy AND the
-workflow's transition-level gate are both working.**
-
-### 3g. Multi-module coverage + a report tool
-
-```bash
-curl http://localhost:4000/api/tools -H "Authorization: Bearer $TOKEN"
-```
-As `sales.user@test.com` you should now also see `quotation.list`,
-`sales_order.list`, `sales_invoice.list` (the Selling module). Log in
-as `sales.manager@test.com` and confirm those plus the CRM tools.
-
-```bash
-# As a Purchasing User (create one in ERPNext with that role if you haven't)
-curl -X POST http://localhost:4000/api/tools/stock.report.stock_balance \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
-```
-Expect an array of stock balance rows. **If ERPNext returns an error
-about the report name or filters**, that's expected until you verify
-`erpnext/reportMap.ts`'s `reportName`/`filterFieldMap` against your
-actual ERPNext version — report internals vary more than doctype REST
-endpoints do. Fix it in that one file; nothing else needs to change.
-
-### 3h. The reasoning loop (needs a real LLM key)
+### 3f. The reasoning loop (needs a real LLM key)
 ```bash
 curl -X POST http://localhost:4000/api/agent/prompt \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"prompt":"list my leads"}'
+  -d '{"prompt":"list my quotations"}'
 ```
 Expect `{"type":"report", "message":"...", "data":[...], "html":"<div class=\"erp-agent-report\">...", "meta":{...}}`.
 
@@ -228,7 +182,7 @@ npm run dev
 Open `http://localhost:5173`.
 
 - [ ] Log in as your `System Manager` test user
-- [ ] Confirm the module-status strip shows the same module list as the backend console
+- [ ] Confirm the module-status strip loads
 - [ ] Edit a setting (e.g. `context_budget_chars`), save, refresh the page — value should persist
 - [ ] Log in as `sales.user@test.com` instead — expect a `403`/redirect, since Sales User isn't in `ADMIN_ROLES`
 
@@ -239,9 +193,6 @@ Open `http://localhost:5173`.
       — expect success (it validates against ERPNext before storing)
 - [ ] Try saving a key that does NOT belong to that email — expect a rejected save with a clear error,
       not a silent wrong-identity attachment
-- [ ] Log out of the agent app (if signed in as `sales.user@test.com`) and log back in with password —
-      create a new lead — check its **Owner** field in ERPNext: should still be `sales.user@test.com`,
-      now via the stored credential instead of a live session
 - [ ] Revoke the credential from the admin app — confirm any existing agent-app session for that user
       is logged out (try a request with the old token — expect 401)
 
@@ -258,23 +209,25 @@ npm run dev
 Open `http://localhost:5174`.
 
 - [ ] Log in as `sales.user@test.com`
-- [ ] Send: "list my leads" — should render as a table matching curl step 3d
+- [ ] Send: "list my quotations" — should render as a table matching curl step 3d
 - [ ] Resize the browser past 900px wide — capabilities panel should appear on the right
-- [ ] Send: "create an opportunity for Acme Corp" — should fail gracefully (role doesn't have this tool) rather than crashing
-- [ ] Log out, log in as `sales.manager@test.com` — send the same prompt — should succeed this time
+- [ ] Send: "create a new lead" — should fail gracefully (this tier doesn't expose that capability) rather than crashing
 
 ---
 
 ## Phase 6 — Known gaps (expected, not bugs)
 
-- `context.search` / prompts that would use semantic search return empty — no embedder wired yet
-- `tickets.list`, `email.list`, `email.draft` return placeholder text — external MCPs not connected yet
-- No automated test suite exists yet — everything above is manual verification
+- Every module besides Selling's `quotation.list` — CRM, Buying, Stock, Accounting, HR,
+  Manufacturing, Projects, Assets, Quality — is present as an empty configuration stub.
+  That's the free/pro boundary, not something to "fix" here.
+- No workflows are wired (`config/workflows.config.ts` is intentionally empty).
+- `context.search` / prompts that would use semantic search return empty — no embedder wired yet.
+- `tickets.list`, `email.list`, `email.draft` return placeholder text — external MCPs not connected.
+- No automated test suite exists yet — everything above is manual verification.
 
 ---
 
 ## If something breaks
 
 Report back with: which phase/step, the exact command or action, and
-the exact error message or response body — that's enough for me to
-find the fix without guessing.
+the exact error message or response body.
