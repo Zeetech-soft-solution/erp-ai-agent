@@ -8,9 +8,9 @@ import { EmailItem, SentEmailItem } from "./types";
  * external helpdesk/mailbox" note - this is that surface). Reply/action
  * work itself always happens through chat (see pages/Email.tsx), never a
  * method on this service - there's no "fake instant reply" path. Senders
- * are real accounts from the actual employee dataset (see erpdatabuild's
- * user_credentials.md), not fabricated addresses - so a demo can point at
- * an inbox and the identity behind it is a real, working login.
+ * are real accounts from the actual employee dataset, not fabricated
+ * addresses - so a demo can point at an inbox and the identity behind it
+ * is a real, working login.
  */
 const SAMPLE: EmailItem[] = [
   {

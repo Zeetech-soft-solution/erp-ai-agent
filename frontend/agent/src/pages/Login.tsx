@@ -24,7 +24,7 @@ interface DemoUser {
  * One real, working account per functional role in the demo company,
  * never the admin/System Manager account, that's called out on its own
  * below the list. Picked and verified 2026-08-05 against the LIVE
- * ERPNext instance (not just erpdatabuild's docs): each email's
+ * ERPNext instance (not just static docs): each email's
  * `Has Role` rows were queried directly and match the role shown here,
  * and each role's underlying doctypes (Sales Order, Purchase Order,
  * Quality Inspection, Work Order, etc.) carry hundreds of company-wide
