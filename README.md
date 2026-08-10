@@ -61,5 +61,7 @@ cd frontend/admin && npm install && cp .env.example .env && npm run dev
 cd frontend/agent && npm install && cp .env.example .env && npm run dev
 ```
 
-See `docs/ARCHITECTURE.md` for how modules, entities, and connectors fit together, and
-`docs/TESTING_GUIDE.md` for how to exercise the running system.
+See `docs/INSTALL.md` for the full step-by-step install (backend, database, admin console,
+agent app, and optional ERPNext connector), `docs/ARCHITECTURE.md` for how modules,
+entities, and connectors fit together, and `docs/TESTING_GUIDE.md` for the condensed
+version of the same install aimed at developers who just want it running.
