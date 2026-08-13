@@ -1,6 +1,6 @@
-# ERP Agent (Free / Open Core)
+# ERP Agent AI (Free / Open Core)
 
-An extensible, role-based AI agent for ERP systems. This is the **free, open-source tier**:
+An extensible, role-based AI agent for ERP AI integration systems. This is the **free, open-source tier**:
 the complete core engine (module registry, entity/workflow/report factories, auth, context
 assembly, LLM tool-calling loop) plus a working reference connector for ERPNext, with one
 real, fully working capability wired end to end (`quotation.list`, for the **Sales User**
