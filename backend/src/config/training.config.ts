@@ -9,6 +9,7 @@ import { MANUFACTURING_TRAINING } from "./modules/manufacturing/training";
 import { PROJECTS_TRAINING } from "./modules/projects/training";
 import { ASSETS_TRAINING } from "./modules/assets/training";
 import { QUALITY_TRAINING } from "./modules/quality/training";
+import { SUPPORT_TRAINING } from "./modules/support/training";
 
 /**
  * Per-module training curation metadata, assembled from every module's
@@ -31,4 +32,5 @@ export const TRAINING_CONFIGS: ModuleTrainingConfig[] = [
   PROJECTS_TRAINING,
   ASSETS_TRAINING,
   QUALITY_TRAINING,
+  SUPPORT_TRAINING,
 ];

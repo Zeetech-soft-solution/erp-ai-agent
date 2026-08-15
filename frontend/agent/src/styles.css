@@ -210,11 +210,11 @@ body {
 
 .bubble-user {
   background: var(--user-bubble); color: var(--user-bubble-ink); padding: 10px 14px;
-  border-radius: 4px 14px 14px 14px; font-size: 14px; max-width: 480px;
+  border-radius: 4px 14px 14px 14px; font-size: 14px; max-width: 480px; white-space: pre-wrap;
 }
 .bubble-agent {
   background: var(--bg-surface); border: 1px solid var(--border); padding: 12px 14px;
-  border-radius: 4px 14px 14px 14px; font-size: 14px; line-height: 1.55;
+  border-radius: 4px 14px 14px 14px; font-size: 14px; line-height: 1.55; white-space: pre-wrap;
 }
 .bubble-agent.pending { color: var(--ink-muted); font-style: italic; }
 .bubble-alert {
@@ -269,6 +269,50 @@ body {
 .agent-report-html .erp-agent-empty {
   color: var(--ink-muted); font-size: 13px; padding: 14px 16px; border: 1px solid var(--border);
   border-radius: 12px; background: var(--bg-surface);
+}
+.agent-report-html button.erp-agent-row-id-link {
+  font-family: inherit; font-size: inherit; font-weight: 600; padding: 0; border: none; background: none;
+  color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.agent-report-html button.erp-agent-row-id-link:hover { text-decoration-thickness: 2px; }
+
+.agent-report-html .erp-agent-card {
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden;
+}
+.agent-report-html .erp-agent-card + .erp-agent-card { margin-top: 10px; }
+.agent-report-html .erp-agent-card-row {
+  display: flex; gap: 16px; padding: 9px 14px; border-top: 1px solid var(--border);
+}
+.agent-report-html .erp-agent-card-row:first-child { border-top: none; }
+.agent-report-html .erp-agent-card-label {
+  flex: 0 0 160px; color: var(--ink-secondary); font-weight: 600; font-size: 11.5px;
+  letter-spacing: 0.02em; text-transform: uppercase; padding-top: 1px;
+}
+.agent-report-html .erp-agent-card-value { flex: 1; font-size: 13px; word-break: break-word; }
+
+.agent-report-html .erp-agent-chart {
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04); padding: 14px 16px; display: flex;
+  flex-direction: column; gap: 10px;
+}
+.agent-report-html .erp-agent-chart-row {
+  display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+}
+.agent-report-html .erp-agent-chart-label {
+  flex: 0 0 130px; color: var(--ink-secondary); font-weight: 600; font-size: 11.5px;
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.agent-report-html .erp-agent-chart-track {
+  flex: 1; min-width: 40px; height: 16px; border-radius: 4px; background: var(--bg-page);
+  overflow: hidden;
+}
+.agent-report-html .erp-agent-chart-bar {
+  height: 100%; min-width: 4px; border-radius: 4px; background: var(--accent);
+}
+.agent-report-html .erp-agent-chart-value {
+  flex: 0 0 28px; text-align: right; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums;
 }
 
 .document-card {

@@ -17,7 +17,10 @@ import { businessRuleEngine } from "./core/businessRuleEngine";
 import { RULE_CONFIGS } from "./config/rules.config";
 import { vectorContextProvider } from "./providers/context/vectorContextProvider";
 import { OpenAIEmbedder } from "./providers/embeddings/openaiEmbedder";
+import { analyticsModule } from "./modules/analytics";
 import "./renderers/tableRenderer"; // side-effect: registers renderers
+import "./renderers/cardsRenderer"; // side-effect: registers the "cards" renderer
+import "./renderers/chartRenderer"; // side-effect: registers the "chart" renderer
 
 /**
  * The ONLY file that knows the full list of possible modules.
@@ -34,6 +37,7 @@ const AVAILABLE_MODULES: Record<string, any> = {
   email: emailModule,
   project_issue: projectsModule,
   document: documentsModule,
+  analytics: analyticsModule,
 };
 
 // Shared with core/policyDocumentStore.ts so admin-uploaded policy

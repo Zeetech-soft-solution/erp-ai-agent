@@ -9,6 +9,7 @@ import { MANUFACTURING_ENTITIES } from "./modules/manufacturing/entities";
 import { PROJECTS_ENTITIES } from "./modules/projects/entities";
 import { ASSETS_ENTITIES } from "./modules/assets/entities";
 import { QUALITY_ENTITIES } from "./modules/quality/entities";
+import { SUPPORT_ENTITIES } from "./modules/support/entities";
 
 /**
  * ERP-AGNOSTIC entity list, ASSEMBLED from one file per standard ERP
@@ -46,4 +47,5 @@ export const ENTITY_CONFIGS: EntityConfig[] = [
   ...PROJECTS_ENTITIES,
   ...ASSETS_ENTITIES,
   ...QUALITY_ENTITIES,
+  ...SUPPORT_ENTITIES,
 ];

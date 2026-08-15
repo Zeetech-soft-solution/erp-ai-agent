@@ -9,6 +9,7 @@ import { MANUFACTURING_RULES } from "./modules/manufacturing/rules";
 import { PROJECTS_RULES } from "./modules/projects/rules";
 import { ASSETS_RULES } from "./modules/assets/rules";
 import { QUALITY_RULES } from "./modules/quality/rules";
+import { SUPPORT_RULES } from "./modules/support/rules";
 
 /**
  * ERP-AGNOSTIC business-rule list, assembled from every module's
@@ -31,4 +32,5 @@ export const RULE_CONFIGS: RuleSet[] = [
   ...PROJECTS_RULES,
   ...ASSETS_RULES,
   ...QUALITY_RULES,
+  ...SUPPORT_RULES,
 ];
