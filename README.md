@@ -30,9 +30,9 @@ against a real ERPNext instance) — this is the tool-calling/reporting architec
 implements, running with Pro's full accounting module coverage rather than this repo's single wired
 `quotation.list` capability.
 
-| Outstanding invoice aging | Recent sales invoices |
+| Outstanding invoice aging | Multi-chart dashboard (pie + bar + line) |
 |---|---|
-| ![Outstanding customer invoice aging report, listing overdue customers with amounts and days overdue](docs/screenshots/accounting-aging-report.jpg) | ![Table of the 5 most recent sales invoices with customer, total, and paid/unpaid status](docs/screenshots/accounting-recent-invoices.jpg) |
+| ![Outstanding customer invoice aging report, listing overdue customers with amounts and days overdue](docs/screenshots/accounting-aging-report.jpg) | ![A composed sales dashboard: a pie chart of quotations by status, a bar chart of sales orders by status, and a line chart of monthly sales invoice totals, all generated from one request](docs/screenshots/pro-chart-dashboard.jpg) |
 
 ## What's here vs. what's not
 
