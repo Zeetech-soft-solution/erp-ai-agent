@@ -23,6 +23,17 @@ configuration — enough to see the whole architecture, not just one slice of it
 >
 > 🔗 **[noviz.in](https://noviz.in)** — product info · 🚀 **[Live demo of Pro](https://noviz.in/agent/login)** — sign in with a demo account and try it against a real, running ERP.
 
+## Screenshots
+
+Real output from the [live Pro demo](https://noviz.in/agent/login) (Accounts Manager role, signed in
+against a real ERPNext instance) — this is the tool-calling/reporting architecture this repo's core
+implements, running with Pro's full accounting module coverage rather than this repo's single wired
+`quotation.list` capability.
+
+| Outstanding invoice aging | Recent sales invoices |
+|---|---|
+| ![Outstanding customer invoice aging report, listing overdue customers with amounts and days overdue](docs/screenshots/accounting-aging-report.jpg) | ![Table of the 5 most recent sales invoices with customer, total, and paid/unpaid status](docs/screenshots/accounting-recent-invoices.jpg) |
+
 ## What's here vs. what's not
 
 Every module folder exists under `backend/src/config/modules/` and
