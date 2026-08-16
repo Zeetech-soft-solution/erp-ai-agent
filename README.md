@@ -34,6 +34,8 @@ implements, running with Pro's full accounting module coverage rather than this 
 |---|---|
 | ![Outstanding customer invoice aging report, listing overdue customers with amounts and days overdue](docs/screenshots/accounting-aging-report.jpg) | ![A composed sales dashboard: a pie chart of quotations by status, a bar chart of sales orders by status, and a line chart of monthly sales invoice totals, all generated from one request](docs/screenshots/pro-chart-dashboard.jpg) |
 
+📝 **Write-up:** [AI Agents in the Enterprise: Building Smarter ERP Dashboards with Purpose-Built Tools](https://dev.to/tajdin_k_27861e95a3d49baa/-1k1) — the architecture behind the dashboard screenshot above: fetch/shape/render as three separate, composable tools instead of one model call doing everything.
+
 ## What's here vs. what's not
 
 Every module folder exists under `backend/src/config/modules/` and
