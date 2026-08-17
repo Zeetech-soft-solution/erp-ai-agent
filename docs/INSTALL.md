@@ -103,7 +103,8 @@ connector in this repo** and is the only one implemented out of the box today.
 You can skip this step entirely and still run the full install through
 [Step 6](#step-6-test-with-a-demo-install) — the backend, database, admin console, and
 agent app all come up fine with no ERP connected; you just won't be able to log in as an
-ERPNext user or call ERPNext-backed tools (`quotation.list`, etc.) until this step is done.
+ERPNext user or call ERPNext-backed tools (`crm.list_leads`, `opportunity.list`, etc.)
+until this step is done.
 
 ### 3a. Using your own ERPNext instance
 
@@ -126,16 +127,46 @@ impersonation" in `docs/ARCHITECTURE.md` for why the two are kept separate.
 ### 3b. ERPNext reference/demo database (optional)
 
 If you don't already have an ERPNext instance with data in it to test against, you need
-*something* populated to point this at — an empty ERPNext site with no Quotations, no
-Leads, no test users has nothing for the agent to list or act on. Two ways to get there:
+*something* populated to point this at — an empty ERPNext site with no Leads, no
+Opportunities, no test users has nothing for the agent to list or act on.
 
-- Spin up a fresh ERPNext instance yourself (the official
-  [`frappe_docker`](https://github.com/frappe/frappe_docker) quick-start, or a Frappe Cloud
-  trial site) and enter a handful of test records by hand — a **Sales User** and a couple
-  of **Quotation** records is enough to exercise the one live capability in this tier (see
-  [Step 6](#step-6-test-with-a-demo-install)).
-- Import ERPNext's own demo/sample data, if your ERPNext version ships one, as a faster
-  starting point than entering records by hand.
+**Installing ERPNext itself**, if you don't have an instance yet: the official
+[`frappe_docker`](https://github.com/frappe/frappe_docker) quick-start is the fastest path
+(`docker compose` up, one `bench new-site` command) — it gets you a real, blank ERPNext +
+HRMS instance with a working Administrator login in a few minutes, no manual Frappe
+framework setup needed. A Frappe Cloud trial site works the same way if you'd rather not
+self-host.
+
+Once you have an instance, either enter a handful of test records by hand — a **Sales
+User** and a few **Lead**/**Opportunity** records is enough to exercise this tier's CRM
+module (see [Step 6](#step-6-test-with-a-demo-install)) — or import ERPNext's own demo
+data if your version ships one, as a faster starting point. `sample-data/crm-sample-data.json`
+in this repo is a small, real snapshot (leads, opportunities, customers, territories) from
+this project's own reference demo company, useful as a concrete example of the shape/volume
+of data worth entering — not something this repo imports for you automatically.
+
+**Backing up and restoring** the ERPNext data you build up (so a bad experiment or a
+version upgrade doesn't cost you your test data) uses ERPNext's own `bench` tooling —
+nothing agent-specific:
+
+```bash
+# Take a full backup (database + uploaded files) of your site
+bench --site your-site-name backup --with-files
+
+# Restore it later (e.g. after a reinstall, or onto a fresh instance)
+bench --site your-site-name restore /path/to/the-backup-database.sql.gz \
+  --with-private-files /path/to/the-backup-private-files.tar \
+  --with-public-files /path/to/the-backup-public-files.tar
+```
+
+Backups land in `sites/your-site-name/private/backups/` by default. This is standard
+Frappe/ERPNext behavior, documented in full in the
+[Frappe Framework docs](https://docs.frappe.io/framework/user/en/bench/bench-backup-and-restore)
+— run it from wherever your `bench` install lives (inside the `frappe_docker` backend
+container if that's how you installed ERPNext: `docker exec <container> bench --site
+your-site-name backup --with-files`). The agent's own database (Step 2) is entirely
+separate from this — backing up ERPNext does not back up the agent's Postgres, and vice
+versa; back up both if you want a full restore point for the whole stack.
 
 > **Need a larger or more realistic dataset — multiple roles, modules, and volumes of
 > records for proper multi-scenario testing — rather than a handful of hand-entered rows?**
@@ -182,13 +213,17 @@ Open `http://localhost:5174`.
 This confirms the whole stack — backend, database, admin console, agent app, and (if you
 completed Step 3) ERPNext — actually works end to end.
 
-1. In ERPNext, create one user with the **Sales User** role, and 1–2 **Quotation** records
-   so there's something for the agent to find.
+1. In ERPNext, create one user with the **Sales User** role, and a few **Lead**/
+   **Opportunity** records so there's something for the agent to find (see
+   `sample-data/crm-sample-data.json` for the shape of real records this module works with).
 2. Sign in to the agent app (`:5174`) as that user.
-3. Ask it: **"list my quotations."** You should get a rendered table back — this is
-   `quotation.list`, the one fully-wired capability in this tier (see
-   `docs/ARCHITECTURE.md` for why only this one entity is populated and every other module
-   is present-but-empty scaffolding).
+3. Ask it things like **"show me our leads"**, **"how many open leads do we have"**, or
+   **"break down opportunity value by territory."** You should get real answers and a
+   rendered table back — this is the CRM module (leads, contacts, opportunities, customers,
+   territories, plus the lead-qualification workflow and analytics tools), the fully-wired
+   capability in this tier (see `docs/ARCHITECTURE.md` and `docs/SAMPLE_PROMPTS.md` for more
+   — and for why every other module is present-but-empty scaffolding, ready to extend the
+   same way).
 4. Back in the admin console (`:5173`), confirm the module-status strip shows the
    modules from `ACTIVE_MODULES`, and that you can edit a setting.
 
@@ -219,8 +254,8 @@ output you can serve from any static host or reverse proxy (nginx, etc.), pointe
   with permission to call `getUserRoles`, and that `ERPNEXT_BASE_URL` has no trailing
   slash mismatch.
 - **`allowed_tools` comes back empty** — the logged-in user's ERPNext role isn't mapped to
-  any tools in `config/roles.policy.ts`. `Sales User` → `quotation.list` is the one mapping
-  present in this tier.
+  any tools in `config/roles.policy.ts`. `Sales User` → the CRM module tools is the one
+  mapping present in this tier.
 - Anything else: report back with which step, the exact command, and the exact error
   message or response body.
 

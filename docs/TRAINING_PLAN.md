@@ -14,10 +14,11 @@ backfill later.
 A second, parallel table, `rule_evaluations` (see
 `core/businessRuleEngine.ts` / `core/ruleOutcomeLogger.ts`), logs every
 business-rule check — which rule fired, whether it blocked or just
-warned, on what arguments. This tier ships one reference rule
-(`quotation.warn_duplicate_open` in `config/modules/selling/rules.ts`) as
-a worked example; real rule coverage across modules is a pro-tier
-capability. Same safe-no-op-without-`DATABASE_URL` behavior, same
+warned, on what arguments. This tier ships real rule coverage for the CRM
+module (`config/modules/crm/rules.ts` — required contact info, duplicate-
+lead/opportunity warnings, manager-gated lead conversion) as the worked
+example; extending that coverage to other modules follows the same
+pattern. Same safe-no-op-without-`DATABASE_URL` behavior, same
 "never delete casually" status as `interaction_log`.
 
 **Action now**: nothing code-wise. Just don't skip setting `DATABASE_URL`

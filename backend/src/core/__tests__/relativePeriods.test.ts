@@ -5,11 +5,16 @@ describe("relativePeriods", () => {
     expect(RELATIVE_PERIODS).toContain("last_week");
   });
 
-  it("resolveRelativePeriod throws", () => {
-    expect(() => resolveRelativePeriod("last_week", "2026-08-15")).toThrow();
+  it("resolveRelativePeriod resolves a real two-sided range", () => {
+    // 2026-08-15 is a Saturday; last_week (Mon-Sun) = Aug 3-9.
+    expect(resolveRelativePeriod("last_week", "2026-08-15")).toEqual(["2026-08-03", "2026-08-09"]);
   });
 
-  it("detectRelativePeriodPhrase returns null", () => {
-    expect(detectRelativePeriodPhrase("last week")).toBeNull();
+  it("resolveRelativePeriod throws on an unknown period", () => {
+    expect(() => resolveRelativePeriod("not_a_real_period", "2026-08-15")).toThrow();
+  });
+
+  it("detectRelativePeriodPhrase recognizes a real phrase", () => {
+    expect(detectRelativePeriodPhrase("last week")).toBe("last_week");
   });
 });

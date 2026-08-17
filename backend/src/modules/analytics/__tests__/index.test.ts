@@ -5,7 +5,12 @@ describe("analyticsModule", () => {
     expect(analyticsModule.name).toBe("analytics");
   });
 
-  it("exposes no tools", () => {
-    expect(analyticsModule.tools).toEqual([]);
+  it("exposes the four real analytics tools", () => {
+    expect(analyticsModule.tools.map((t) => t.name)).toEqual([
+      "analytics.aggregate",
+      "analytics.percentage",
+      "analytics.calculate",
+      "analytics.correlate",
+    ]);
   });
 });

@@ -31,6 +31,7 @@ export async function callTool(session: Session, toolName: string, args: any) {
   const tool = moduleRegistry.findTool(toolName);
   if (!tool) throw new Error(`Unknown tool: ${toolName}`);
 
+  let ruleWarnings: string[] = [];
   if (tool.entityKey && tool.ruleAction) {
     const evaluation = await businessRuleEngine.evaluate(tool.entityKey, tool.ruleAction, args, session);
     await ruleOutcomeLogger.log({
@@ -45,9 +46,31 @@ export async function callTool(session: Session, toolName: string, args: any) {
     if (!evaluation.allowed) {
       throw new RuleViolationError(evaluation.violations.map((v) => v.message).join(" "));
     }
+    // Confirmed live 2026-08-11 (manual business-rule audit): a
+    // non-blocking ("warn, don't block") violation was evaluated and
+    // logged to the audit trail above, then completely discarded — the
+    // caller only ever got `tool.handler`'s own return value, with no
+    // path for the warning message to ever reach the LLM or the user.
+    // This made EVERY "flag a likely-duplicate" rule in the codebase
+    // (quotation/sales_order/purchase_order/opportunity/lead/issue/task/
+    // quality_inspection's own warn_duplicate_* rules — 8 total) silently
+    // inert: evaluated correctly, but never actually surfaced to anyone.
+    ruleWarnings = evaluation.violations.filter((v) => !v.blocking).map((v) => v.message);
   }
 
-  return tool.handler(args, session);
+  const result = await tool.handler(args, session);
+  // Only ever changes the shape when there's a real warning to attach —
+  // the overwhelmingly common case (no ruleAction at all, i.e. every
+  // *.list/*.get tool; or a create/update with zero violations) returns
+  // `result` completely unchanged, byte-identical to before this fix.
+  // Guarded to plain-object results only (never an array) since
+  // businessRuleEngine only ever evaluates create/update actions, whose
+  // handlers return a single record, not a list — this can never affect
+  // *.list's row-array shape or pollute a rendered table.
+  if (ruleWarnings.length && result && typeof result === "object" && !Array.isArray(result)) {
+    return { ...result, _business_rule_notes: ruleWarnings };
+  }
+  return result;
 }
 
 export function listAllowedTools(session: Session): ToolDefinition[] {

@@ -26,6 +26,18 @@ class SessionStore {
   private ttlMs = 8 * 60 * 60 * 1000; // matches AGENT_JWT_EXPIRES_IN default
 
   create(session: Session): string {
+    // Informational only — never blocks the new login. Multiple
+    // simultaneous devices/tabs for one person are expected, normal
+    // usage (and each now gets fully independent chat memory, see
+    // sessionCacheProvider.ts) — this is just visibility into it
+    // happening, for whoever's watching server logs.
+    const now = Date.now();
+    for (const entry of this.store.values()) {
+      if (entry.session.sub === session.sub && entry.expiresAt > now) {
+        console.warn(`[sessionStore] ${session.sub} is logging in while already having an active session elsewhere`);
+        break;
+      }
+    }
     const sessionId = randomUUID();
     this.store.set(sessionId, { session, expiresAt: Date.now() + this.ttlMs });
     return sessionId;

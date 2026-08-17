@@ -1,17 +1,8 @@
 import { EntityConfig } from "../../../core/types";
 
-/** Selling module. Free tier: only quotation, and only "list" — no
- *  get/create/update, and no sales_order/sales_invoice/pos_invoice/
- *  pricing_rule/everything else beyond it. This is intentionally the
- *  single API surface free exposes; the rest is pro-tier. */
-export const SELLING_ENTITIES: EntityConfig[] = [
-  {
-    entityKey: "quotation",
-    module: "selling",
-    toolPrefix: "quotation",
-    canonicalFields: ["id", "party", "status", "total", "date"],
-    createFields: ["party"],
-    operations: ["list"],
-    description: "Sales quotations",
-  },
-];
+/** Selling module — quotations, sales orders, and the rest of the
+ *  order-to-cash flow. Empty here; this file stays present so the
+ *  module's folder shape (entities.ts, rules.ts, training.ts) is
+ *  complete and consistent, ready to extend the same way the CRM
+ *  module (config/modules/crm/entities.ts) already demonstrates. */
+export const SELLING_ENTITIES: EntityConfig[] = [];

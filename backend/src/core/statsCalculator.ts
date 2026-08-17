@@ -1,3 +1,19 @@
+/**
+ * Pure array-in, number-out math — no ERPNext, no entity, no fetch, no
+ * credential. Shared by two callers with different jobs:
+ *  - erpnextConnector.ts's aggregate() fetches real rows for one entity
+ *    then reduces them with these same functions.
+ *  - modules/analytics/index.ts's analytics.calculate tool (below) lets
+ *    the model compute a derived number directly over values it ALREADY
+ *    has in context — e.g. combining two separate analytics.aggregate
+ *    results ({sum: period A}, {sum: period B}) into one growth-rate
+ *    number — without a second ERPNext round trip and without doing the
+ *    arithmetic itself (the same "never trust the model's own mental
+ *    math over more than a couple of numbers" discipline as every other
+ *    tool in analytics/, just for numbers it's holding rather than rows
+ *    it still needs to fetch).
+ */
+
 export function mean(nums: number[]): number {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
@@ -31,11 +47,14 @@ export function growthPercent(from: number, to: number): number {
 
 // Pearson correlation coefficient — the standard measure of linear
 // correlation between two paired series (r in [-1, 1]; +1 = perfect
-// positive linear relationship, -1 = perfect negative, 0 = none). xs/ys
-// must be the SAME length and paired index-by-index (e.g. xs[i]/ys[i]
-// both come from the same record) — an unequal-length or shuffled
-// pairing produces a meaningless number, so both are rejected rather
-// than silently truncated/zipped.
+// positive linear relationship, -1 = perfect negative, 0 = none). This
+// is THE standard formula for this, not a design choice — nothing
+// bespoke here, same reasoning as growthPercent being the standard
+// definition of period-over-period growth. xs/ys must be the SAME
+// length and paired index-by-index (e.g. xs[i]/ys[i] both come from the
+// same record) — an unequal-length or shuffled pairing produces a
+// meaningless number, so both are rejected rather than silently
+// truncated/zipped.
 export function pearsonCorrelation(xs: number[], ys: number[]): number {
   if (xs.length !== ys.length) {
     throw new Error(`pearsonCorrelation requires paired series of equal length — got ${xs.length} and ${ys.length}`);

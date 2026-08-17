@@ -21,15 +21,11 @@ interface DemoUser {
 }
 
 /**
- * One real, working account per functional role in the demo company,
- * never the admin/System Manager account, that's called out on its own
- * below the list. Picked and verified 2026-08-05 against the LIVE
- * ERPNext instance (not just static docs): each email's
- * `Has Role` rows were queried directly and match the role shown here,
- * and each role's underlying doctypes (Sales Order, Purchase Order,
- * Quality Inspection, Work Order, etc.) carry hundreds of company-wide
- * records visible to that role, so the demo never opens onto an empty
- * list. Password is the same for all of them.
+ * This tier grants one role's worth of real tool access — Sales User
+ * (see config/roles.policy.ts): leads, contacts, opportunities,
+ * customers, and territories, the CRM sample this build demonstrates.
+ * Rahul Menon carries that role on the live demo company and is the
+ * account this page signs a demo visitor in as.
  */
 const DEMO_USERS: DemoUser[] = [
   {
@@ -37,56 +33,7 @@ const DEMO_USERS: DemoUser[] = [
     email: "rahul.menon66@sunriseelectronics.example.in",
     department: "Sales & Marketing",
     role: "Sales Manager",
-    access: "Leads, opportunities, quotations, sales orders & invoices",
-  },
-  {
-    name: "Anjali Singh",
-    email: "anjali.singh67@sunriseelectronics.example.in",
-    department: "Purchase",
-    role: "Purchase User",
-    access: "Purchase orders, RFQs, supplier quotations & material requests",
-  },
-  {
-    name: "Pankaj Rathore",
-    email: "pankaj.rathore64@sunriseelectronics.example.in",
-    department: "Accounts & Finance",
-    role: "Accounts Manager",
-    access: "Invoices, payments, ledgers & financial reports",
-  },
-  {
-    name: "Sarita Nair",
-    email: "sarita.nair89@sunriseelectronics.example.in",
-    department: "Human Resources",
-    role: "HR Manager",
-    access: "Employees, leave, payroll, recruitment & appraisals",
-  },
-  {
-    name: "Karthik Desai",
-    email: "karthik.desai67@sunriseelectronics.example.in",
-    department: "Production",
-    role: "Manufacturing Manager",
-    access: "Work orders, BOMs, job cards & production plans",
-  },
-  {
-    name: "Gopal Kapoor",
-    email: "gopal.kapoor53@sunriseelectronics.example.in",
-    department: "Quality Control",
-    role: "Quality Manager",
-    access: "Quality inspections & quality goals",
-  },
-  {
-    name: "Radha Mishra",
-    email: "radha.mishra59@sunriseelectronics.example.in",
-    department: "Research & Development",
-    role: "Projects User",
-    access: "Projects, tasks & timesheets",
-  },
-  {
-    name: "Prakash Mehta",
-    email: "prakash.mehta20@sunriseelectronics.example.in",
-    department: "Stores & Logistics",
-    role: "Stock User",
-    access: "Stock entries, delivery notes & material requests",
+    access: "Leads, opportunities, contacts, customers & territories",
   },
 ];
 
@@ -231,7 +178,7 @@ export function Login() {
             </button>
             <h2>Demo credentials</h2>
             <p>
-              One real user per role. Each sees only what their own role grants. Password for all: <code>{DEMO_PASSWORD}</code>
+              A real account on the live demo company, scoped to its own role. Password: <code>{DEMO_PASSWORD}</code>
             </p>
 
             <div className="demo-user-list">

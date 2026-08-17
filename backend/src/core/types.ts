@@ -23,6 +23,19 @@ export interface Session {
   erpnext_roles: string[];
   allowed_tools: string[];     // resolved at login, "*" means all
   credential: UserCredential;  // used to impersonate this user on the connected system
+  // Set by auth/middleware.ts when reconstructing a session from
+  // sessionStore for an authenticated request — undefined only in the
+  // brief window auth/erpnextAuth.ts constructs a Session literal
+  // BEFORE sessionStore.create() has minted its id (chicken-and-egg:
+  // the store assigns the id, so the object can't carry it yet at that
+  // point). Every real consumer (gateway, reasoningEngine,
+  // sessionCacheProvider) only ever sees req.session from an
+  // authenticated request, where this is always populated — added so
+  // sessionCacheProvider can key chat memory per LOGIN, not per user
+  // email: confirmed live, keying by email meant a second login (or
+  // even the same account tested repeatedly) inherited another active
+  // session's leftover conversation state.
+  sessionId?: string;
 }
 
 // ---- Tools (the unit every MCP module exposes) ----
@@ -48,8 +61,14 @@ export interface MCPModule {
 }
 
 // ---- Role policy (who can call what) ----
+// System-agnostic on purpose, same as SystemConnector: `roles` is
+// whatever role/authorization strings that system's own
+// SystemConnector.getUserRoles() returned — this interface never knows
+// or cares whether they're ERPNext role names, SAP authorization
+// profiles, or an Odoo group's technical name. See config/rolePolicy.config.ts
+// for how the concrete provider is selected.
 export interface RolePolicyProvider {
-  resolveAllowedTools(erpnextRoles: string[]): Promise<string[]> | string[];
+  resolveAllowedTools(roles: string[]): Promise<string[]> | string[];
 }
 
 // ---- Context (hot/warm/cold retrieval) ----
@@ -100,6 +119,15 @@ export interface DisplayIntent {
   render: "table" | "chart" | "cards" | "timeline" | "raw" | "none" | "document";
   highlight?: string[];
   next_steps?: string[];
+  // Which tool call (exact name, e.g. "quotation.list") this render is
+  // based on — only meaningful/required when more than one *.list/*.get/
+  // report-style tool was called in the same turn, so reasoningEngine.ts
+  // knows which of several results to actually show, instead of always
+  // defaulting to whichever tool happened to run last (confirmed live:
+  // that default silently mismatched the reply text to a stale/unrelated
+  // table more than once). Omit on a single-tool-call turn — reasoningEngine
+  // falls back to that turn's one result either way.
+  source?: string;
 }
 
 export interface AgentResponse {
@@ -176,6 +204,27 @@ export interface SystemConnector {
    *  credential since it's not a business transaction. */
   getUserRoles(identifier: string): Promise<string[]>;
 
+  /** Does this set of roles count as a full-access administrator on the
+   *  underlying system — ERPNext's "System Manager"/"Administrator", a
+   *  future SAP connector's own equivalent ("SAP_ALL" or whatever),
+   *  whatever that system calls it? Connector-defined on purpose: no
+   *  role name belongs in core/gateway/auth code. Used only to decide
+   *  whether READS may fall back to the service-level credential when
+   *  the person's own real access is narrower than their admin role
+   *  implies (see auth/erpnextAuth.ts) — writes always stay on the
+   *  person's own credential regardless of this, so the audit trail
+   *  (owner/modified_by) never lies about who acted. */
+  isFullAccessRole(roles: string[]): boolean;
+
+  /** The deployment's own company name (e.g. ERPNext's Global Defaults
+   *  default_company) — privileged, deployment-wide introspection, same
+   *  justification as getUserRoles: it's not a business transaction, and
+   *  there's no per-user "which company am I" concept to impersonate.
+   *  Returns null rather than throwing when unavailable (a missing/
+   *  misconfigured default_company shouldn't break login or chat) — the
+   *  reasoning engine treats null as "omit from context", not an error. */
+  getCompanyName(): Promise<string | null>;
+
   /** sortBy is a canonical field name; sortDir defaults to "desc" — lets
    *  callers ask for "the latest N" or "the oldest N" instead of
    *  everything coming back in whatever order the underlying system
@@ -195,6 +244,36 @@ export interface SystemConnector {
    *  mechanism is (ERPNext's query report runner, a SAP report ID,
    *  a raw SQL view, whatever). */
   runReport(reportKey: string, credential: UserCredential, filters?: Record<string, any>): Promise<any[]>;
+
+  /** Server-side numeric aggregation — SUM/AVG/COUNT/MIN/MAX over a
+   *  canonical entity's numeric field, optionally broken down by a
+   *  groupBy field, using the SAME filters shape as list(). Exists so
+   *  "what's the average X" / "how many Y" never becomes the LLM
+   *  eyeballing rows out of its own context and adding them up itself —
+   *  same tool-augmented-arithmetic discipline as Toolformer/ReAct:
+   *  the model calls this and trusts the returned number, it never
+   *  computes the number. See modules/analytics/index.ts. Percentage
+   *  questions ("what % of X are Y") are NOT a separate connector
+   *  method — they're composed from two op:"count" calls at the tool
+   *  layer (modules/analytics/index.ts), same as list()'s filters
+   *  already compose into everything else. */
+  aggregate(
+    entityKey: string,
+    credential: UserCredential,
+    params: { field?: string; op: "sum" | "avg" | "count" | "min" | "max"; filters?: Record<string, any>; groupBy?: string }
+  ): Promise<{ overall: { value: number; count: number }; groups?: { key: string; value: number; count: number }[] }>;
+
+  /** Exact, server-computed row count for a filtered entity query — zero
+   *  rows fetched (ERPNext: frappe.client.get_count, a real COUNT(*)-style
+   *  call, not a paged fetch). This is the cheap pre-check aggregate() now
+   *  runs before deciding whether it can safely reduce over every matching
+   *  row directly, or needs to bisect a date-range filter into smaller
+   *  chunks first (see aggregate()'s own doc comment above and
+   *  erpnextConnector.ts's AGGREGATE_ROW_CAP) — "without losing time to
+   *  read everything to know the total" was the explicit ask this exists
+   *  for. Also directly answers a bare op:"count" aggregate with no
+   *  groupBy (no row fetch needed at all in that case). */
+  count(entityKey: string, credential: UserCredential, filters?: Record<string, any>): Promise<number>;
 
   /** Renders a single record as a PDF via that system's own print/
    *  document-generation engine (ERPNext: Print Format -> PDF) and
@@ -230,6 +309,32 @@ export interface EntityConfig {
   createFields?: string[];        // canonical fields accepted on create
   operations?: ("list" | "get" | "create" | "update")[];
   description?: string;
+  // Real, queried-from-the-live-schema values a Select/enum canonical
+  // field can actually hold (e.g. status: ["Draft","Open","Closed"]) —
+  // surfaced in the generated list tool's filter description
+  // (entityModuleFactory.ts) so the LLM matches against real values
+  // instead of guessing an English paraphrase of the user's question.
+  // Confirmed live 2026-08-09: undocumented status values is exactly
+  // why "what % of sales invoices are outstanding" filtered on
+  // {"status":"outstanding"} (not a real value) and silently reported
+  // 0%. Values here are queried per-doctype from ERPNext's own
+  // DocField.options — never hand-guessed — and the empty/blank option
+  // ERPNext allows on some Select fields (its own "unset" state) is
+  // deliberately omitted, since a real record is never usefully
+  // filtered on "no status yet".
+  fieldValues?: Record<string, string[]>;
+  // Canonical fields that are a Link to another entity's real record id —
+  // e.g. leave_allocation's "employee" must be the Employee doctype's own
+  // id ("HR-EMP-00031"), never the person's display name ("Ravi Kumar").
+  // Confirmed live 2026-08-10: "how many leave days does Ravi Kumar have
+  // left" filtered leave_allocation.list on {employee:"Ravi Kumar"} — a
+  // silent zero-row match, reported back as "no leave allocation records"
+  // (false — the records exist under the real id). Same root-cause shape
+  // as fieldValues above (the LLM had no way to know without guessing),
+  // just for Link fields instead of Select/enum fields. Value is the
+  // linked entityKey (e.g. "employee") so entityModuleFactory.ts can
+  // generate a concrete "resolve via <entity>.list first" instruction.
+  linkFields?: Record<string, string>;
   // Child-table line items (a Sales Order's Items table, a Quotation's
   // Items table...) — the ONE structural gap every entity had until
   // this was added: every create tool was header-only, so "create a

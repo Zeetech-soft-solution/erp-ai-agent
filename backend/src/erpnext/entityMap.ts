@@ -9,8 +9,8 @@ import { MANUFACTURING_MAP } from "./entityMaps/manufacturing";
 import { PROJECTS_MAP } from "./entityMaps/projects";
 import { ASSETS_MAP } from "./entityMaps/assets";
 import { QUALITY_MAP } from "./entityMaps/quality";
-import { NOTIFICATIONS_MAP } from "./entityMaps/notifications";
 import { SUPPORT_MAP } from "./entityMaps/support";
+import { NOTIFICATIONS_MAP } from "./entityMaps/notifications";
 
 export type { ErpNextEntityMapping };
 
@@ -40,8 +40,8 @@ export const ERPNEXT_ENTITY_MAP: Record<string, ErpNextEntityMapping> = {
   ...PROJECTS_MAP,
   ...ASSETS_MAP,
   ...QUALITY_MAP,
-  ...NOTIFICATIONS_MAP,
   ...SUPPORT_MAP,
+  ...NOTIFICATIONS_MAP,
 };
 
 /** Reverse of ERPNEXT_ENTITY_MAP's entityKey -> doctype, e.g. "Lead" ->
@@ -62,11 +62,76 @@ export function nativeFields(entityKey: string): string[] {
   return Object.values(mapping.fieldMap);
 }
 
+/**
+ * Filter-specific counterpart to toNativeData() below — deliberately
+ * throws on an unrecognized canonical field instead of silently
+ * dropping it. Confirmed live 2026-08-11: "how many new leads this
+ * month" filtered on a plausible-but-wrong field name ("created_date"
+ * instead of the real "created") — toNativeData()'s silent
+ * console.warn-and-drop meant the date condition never reached ERPNext
+ * at all, and the query fell back to an unfiltered default-sorted list
+ * with no error of any kind; July-dated rows leaked into a "this month"
+ * answer. A dropped WHERE-clause condition is far more dangerous than a
+ * dropped create/update field (the same silent-drop toNativeData still
+ * correctly uses for document bodies, where an occasional extra/unknown
+ * field is a much lower-stakes, more plausible legitimate case) — a
+ * filter is the one thing standing between "the right rows" and "an
+ * unrelated but plausible-looking set of rows", so getting it silently
+ * ignored is worse than an explicit failure the LLM can see and correct.
+ * Used by erpnextConnector.ts's list()/aggregate() for exactly this
+ * reason; runReport()'s separate filterFieldMap is a different,
+ * smaller, curated structure not covered by this helper.
+ */
+export function toNativeFilters(entityKey: string, canonicalFilters: Record<string, any>): Record<string, any> {
+  const mapping = ERPNEXT_ENTITY_MAP[entityKey];
+  if (!mapping) throw new Error(`No ERPNext entity mapping for "${entityKey}"`);
+  const out: Record<string, any> = {};
+  for (const [canonical, value] of Object.entries(canonicalFilters)) {
+    const native = mapping.fieldMap[canonical];
+    if (!native) {
+      // Confirmed live 2026-08-12: this error correctly stops a wrong
+      // guess ("date" on work_order/expense_claim, "item_group" on item,
+      // "date_of_birth" filtered but not a real employee field) from
+      // silently producing wrong data — but production logs show the
+      // model then just repeats the exact same wrong guess on retry
+      // rather than recovering, because "check this tool's own filter
+      // description" sends it back to re-read a whole schema instead of
+      // handing it the answer directly. Listing the real options right
+      // here (the same information, just not making the model go fetch
+      // it) gives a retry an actual chance of succeeding on the next
+      // call instead of failing the same way again.
+      throw new Error(
+        `"${canonical}" is not a real filter field for "${entityKey}" — the real canonical filter fields for this ` +
+          `entity are: ${Object.keys(mapping.fieldMap).join(", ")}. Use one of those (an unrecognized field name ` +
+          `would otherwise be silently ignored, producing an unfiltered or wrong result instead of an error).`
+      );
+    }
+    out[native] = value;
+  }
+  return out;
+}
+
 export function toNativeData(entityKey: string, canonicalData: Record<string, any>): Record<string, any> {
   const mapping = ERPNEXT_ENTITY_MAP[entityKey];
   if (!mapping) throw new Error(`No ERPNext entity mapping for "${entityKey}"`);
   const out: Record<string, any> = {};
   for (const [canonical, value] of Object.entries(canonicalData)) {
+    const childTable = mapping.childTables?.[canonical];
+    if (childTable && Array.isArray(value)) {
+      out[childTable.nativeField] = value.map((row) => {
+        const nativeRow: Record<string, any> = {};
+        for (const [rowCanonical, rowValue] of Object.entries(row || {})) {
+          const rowNative = childTable.fieldMap[rowCanonical];
+          if (rowNative) {
+            nativeRow[rowNative] = rowValue;
+          } else {
+            console.warn(`[entityMap] "${rowCanonical}" has no native mapping for "${entityKey}.${canonical}" rows — ignored`);
+          }
+        }
+        return nativeRow;
+      });
+      continue;
+    }
     const native = mapping.fieldMap[canonical];
     if (native) {
       out[native] = value;
@@ -83,6 +148,36 @@ export function toCanonicalRow(entityKey: string, nativeRow: Record<string, any>
   const out: Record<string, any> = {};
   for (const [canonical, native] of Object.entries(mapping.fieldMap)) {
     out[canonical] = nativeRow[native];
+  }
+  // Reverse of toNativeData's childTables handling above — confirmed
+  // live 2026-08-09 that ERPNext's single-record GET (getDoc) already
+  // returns full child-table rows regardless of what fields were asked
+  // for (Frappe's by-name resource fetch always returns the whole
+  // document), so this data was sitting right there unused the whole
+  // time; the gap was purely that nothing on our side ever read it back
+  // into canonical shape. Confirmed live consequence of that gap:
+  // asked to convert a quotation to a sales order, the model had no way
+  // to see the quotation's real items and asked the user to retype them
+  // by hand — item codes, quantities, rates it already had, just never
+  // exposed. NOT populated on .list() results (Frappe's list endpoint
+  // doesn't return child-table data at all, by design on ERPNext's
+  // side, not something this connector controls) — only .get() ever
+  // has real rows here; each canonical row's line-items field is simply
+  // absent from a list result, not wrong.
+  if (mapping.childTables) {
+    for (const [canonical, childTable] of Object.entries(mapping.childTables)) {
+      const nativeRows = nativeRow[childTable.nativeField];
+      if (!Array.isArray(nativeRows)) continue;
+      const reverseFieldMap = Object.fromEntries(Object.entries(childTable.fieldMap).map(([c, n]) => [n, c]));
+      out[canonical] = nativeRows.map((row: Record<string, any>) => {
+        const canonicalRow: Record<string, any> = {};
+        for (const [native, value] of Object.entries(row)) {
+          const rowCanonical = reverseFieldMap[native];
+          if (rowCanonical) canonicalRow[rowCanonical] = value;
+        }
+        return canonicalRow;
+      });
+    }
   }
   return out;
 }

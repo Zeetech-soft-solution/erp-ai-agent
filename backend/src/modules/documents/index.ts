@@ -20,14 +20,14 @@ export const documentsModule: MCPModule = {
     {
       name: "document.get_pdf",
       description:
-        "Get a downloadable PDF link for a single record — use this when the user asks for a quotation " +
-        "as a PDF or document. entityKey is the canonical entity name (e.g. \"quotation\") " +
+        "Get a downloadable PDF link for a single record — use this when the user asks for a document/PDF copy " +
+        "of a specific record. entityKey is the canonical entity name (e.g. \"opportunity\", \"lead\") " +
         "and id is the record's id, both from a prior list/get call.",
       module: "document",
       parameters: {
         type: "object",
         properties: {
-          entityKey: { type: "string", description: "Canonical entity name, e.g. \"quotation\"" },
+          entityKey: { type: "string", description: "Canonical entity name, e.g. \"opportunity\"" },
           id: { type: "string", description: "The record's id" },
         },
         required: ["entityKey", "id"],

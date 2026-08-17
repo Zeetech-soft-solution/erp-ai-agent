@@ -1,10 +1,12 @@
 # Running the agent — minimal guide
 
-This tier exposes exactly **one** live capability: `quotation.list`, granted
-to the **Sales User** role. Everything else in the codebase is a real,
-complete folder shape with empty content (pro-tier fills it in) — see
-`docs/ARCHITECTURE.md`. This guide is just enough to get the whole thing
-running end to end.
+This tier exposes a working **CRM module** — leads, contacts, opportunities,
+customers, territories, the lead-qualification workflow, and the analytics
+tools, all granted to the **Sales User** role, with real business rules
+(required contact info, duplicate warnings, manager-gated conversion).
+Everything else in the codebase is a real, complete folder shape with empty
+content, ready to extend the same way — see `docs/ARCHITECTURE.md`. This
+guide is just enough to get the whole thing running end to end.
 
 ## 1. Prerequisites
 
@@ -12,8 +14,9 @@ running end to end.
 - Node.js 18+, npm
 - Postgres 14+ with `CREATE EXTENSION vector;` permission
 - An OpenAI API key (or another OpenAI-compatible endpoint + key)
-- One ERPNext user with role **Sales User**, and a couple of test
-  Quotation records so there's something to see
+- One ERPNext user with role **Sales User**, and a few test Lead/
+  Opportunity records so there's something to see (see
+  `sample-data/crm-sample-data.json` for the shape)
 
 ## 2. Database
 
@@ -59,7 +62,8 @@ cd frontend/agent && npm install && cp .env.example .env && npm run dev
 ```
 
 Open `http://localhost:5174`, sign in as the Sales User you created, and
-ask it to "list my quotations."
+ask it "show me our leads" or "how many open leads do we have." See
+`docs/SAMPLE_PROMPTS.md` for more.
 
 That's a full run: backend + admin console + agent app, against your real
 ERPNext data.

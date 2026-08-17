@@ -332,13 +332,13 @@ workflow exists). This maps directly onto how real approval chains
 work — junior roles can act up to a point, a narrower set of roles
 completes the sensitive step.
 
-**Free tier note**: `config/workflows.config.ts` is intentionally empty
-(`WORKFLOW_CONFIGS: WorkflowDefinition[] = []`) in this tier — a working
-workflow (state machine + double-gated transitions, e.g. a lead or
-quotation approval chain) is a pro-tier capability. The engine
+`config/workflows.config.ts` has one real, working entry —
+`lead_qualification` (qualify/disqualify/convert, the `convert` step
+double-gated to Sales Manager/System Manager) — as the worked example of
+what a real workflow looks like end to end. The engine
 (`core/workflowEngine.ts` / `core/workflowToolFactory.ts`) is fully
-present and domain-agnostic either way; only the config is empty. To add
-your own: populate `WORKFLOW_CONFIGS` with an entry naming a real
+domain-agnostic; that one config entry is what makes it real. To add your
+own: append another entry to `WORKFLOW_CONFIGS` naming a real
 `entityKey`, its `statusField`, and its transitions — the identical shape
 describes a purchase approval chain, an insurance claim process, or a
 patient admission flow in a completely different vertical. The engine
@@ -386,12 +386,14 @@ erpnext/entityMaps/<same-module-names>.ts  <- ERPNext-specific mirror,
 erpnext/entityMap.ts        <- imports + spreads all of the above
 ```
 
-**Almost every module is an empty stub in this tier.** Only `selling`
-has real content — one entity (`quotation`), one operation (`list`), and
-one reference rule in `rules.ts`. Every other module's `entities.ts`,
-`rules.ts`, and `training.ts` (including `crm`'s) exports an empty array,
-on purpose — the folder shape is complete and consistent, ready for
-pro-tier depth, but the business content itself isn't here.
+**Almost every module is an empty stub in this tier.** Only `crm` has real
+content — customer/opportunity/contact/territory entities (plus `lead`,
+hand-written — see below), real business rules (required contact info,
+duplicate-record warnings, manager-gated lead conversion) in `rules.ts`,
+and real training-curation metadata. Every other module's `entities.ts`,
+`rules.ts`, and `training.ts` (including `selling`'s) exports an empty
+array, on purpose — the folder shape is complete and consistent, ready to
+extend the same way, but the business content itself isn't here.
 
 **If you want to add your own entity or rule**, that's exactly what these
 files are for:
@@ -561,8 +563,8 @@ See `docs/TESTING_GUIDE.md` for the full step-by-step version. Short form:
    filename order
 4. `npm run dev`
 5. Create one ERPNext user with the **Sales User** role and confirm `/api/auth/login`
-   returns `allowed_tools: ["quotation.list"]`
-6. Test `/api/tools` (list) and `/api/tools/quotation.list` (POST) with that token
+   returns a real `allowed_tools` list (the CRM module's tools — see `config/roles.policy.ts`)
+6. Test `/api/tools` (list) and `/api/tools/crm.list_leads` (POST) with that token
 7. `cd ../frontend/admin && npm install && cp .env.example .env && npm run dev`
 8. Sign in with a `System Manager` (or whatever `ADMIN_ROLES` lists) user,
    confirm the module-status strip shows your active modules, edit a setting

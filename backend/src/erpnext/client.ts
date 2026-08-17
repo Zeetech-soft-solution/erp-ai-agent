@@ -60,6 +60,27 @@ async function unwrap<T>(request: Promise<{ data: { data: T } }>): Promise<T> {
   }
 }
 
+// Whitelisted RPC methods (/api/method/<dotted.path>) wrap their return
+// value in "message", not "data" — a genuinely different envelope from
+// every /api/resource/<doctype> call above, so this gets its own unwrap
+// rather than overloading the one above. Used for frappe.client.get_count
+// (erpnextConnector.ts's count()) and any future whitelisted method call
+// that isn't a plain doctype list/get/create/update.
+async function unwrapMethod<T>(request: Promise<{ data: { message: T } }>): Promise<T> {
+  try {
+    const res = await request;
+    return res.data.message;
+  } catch (err: any) {
+    const wrapped = new Error(extractErpNextMessage(err));
+    (wrapped as any).status = err.response?.status;
+    throw wrapped;
+  }
+}
+
+export async function callMethod<T = any>(method: string, params?: Record<string, any>, client: AxiosInstance = erpnextClient): Promise<T> {
+  return unwrapMethod<T>(client.get(`/api/method/${method}`, { params }));
+}
+
 export async function getDocList(doctype: string, params?: Record<string, any>, client: AxiosInstance = erpnextClient) {
   return unwrap<any[]>(client.get(`/api/resource/${doctype}`, { params }));
 }
