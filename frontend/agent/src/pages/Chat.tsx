@@ -1,0 +1,95 @@
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { api } from "../api/client";
+import { ChatTurn } from "../api/types";
+import { ResponseView } from "../components/ResponseView";
+import { Composer } from "../components/Composer";
+
+/**
+ * This is the core screen: login lands here. The capabilities panel
+ * ("What I can help with") used to live inside this component, but now
+ * renders once in Layout.tsx alongside every tab (not just Chat) so it
+ * doesn't disappear when switching to Notifications/Email/Support/
+ * Projects - see Layout.tsx for why.
+ *
+ * Proactive alerts (an ERPNext webhook - see routes/webhooks.routes.ts)
+ * used to be polled from here and dropped into the thread inline. That
+ * moved to the Notifications tab (services/notificationsService.ts) since
+ * the alerts endpoint drains its queue on every call - two independent
+ * pollers would race and steal each other's alerts. Chat no longer touches
+ * that endpoint at all.
+ */
+export function Chat() {
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [sending, setSending] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Notifications/Email/Support/Projects action buttons hand a plain-
+  // language prompt to this SAME chat session via router state, rather
+  // than opening a separate thread - clearing the state (replace) right
+  // after consuming it stops a page refresh or back-navigation from
+  // re-sending the same prompt.
+  useEffect(() => {
+    const state = location.state as { autoPrompt?: string; silent?: boolean } | null;
+    if (state?.autoPrompt) {
+      send(state.autoPrompt, state.silent);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  // `silent`: a workflow-tab handoff (Notifications/Email/Support/Projects)
+  // shows no user bubble at all, just "Thinking…" then the response - the
+  // record's own details (which may include things like a raw email
+  // address the LLM needs but the user doesn't need to see echoed back)
+  // stay out of the visible transcript entirely. A next-step button
+  // clicked from WITHIN a response (see onNextStep below) is a normal
+  // visible turn, same as typing into the composer.
+  async function send(prompt: string, silent?: boolean) {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    setTurns((prev) => [...prev, { id, prompt, silent, pending: true }]);
+    setSending(true);
+    try {
+      const response = await api.prompt(prompt);
+      setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, response, pending: false } : t)));
+    } catch (err: any) {
+      setTurns((prev) =>
+        prev.map((t) =>
+          t.id === id
+            ? { ...t, pending: false, response: { type: "text", message: `Error: ${err.message}`, meta: { modules_used: [], tools_used: [], role_context: [] } } }
+            : t
+        )
+      );
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="chat-column">
+      <div className="message-list">
+        {!turns.length && (
+          <div className="bubble-agent">
+            Ask me about your leads, opportunities, contacts, or customers.
+          </div>
+        )}
+        {turns.map((t) => (
+          <div key={t.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="turn">
+              <div className="bubble-user">{t.silent ? "Sending details…" : t.prompt}</div>
+            </div>
+            <div className="turn">
+              {t.pending ? (
+                <div className="bubble-agent pending">Thinking…</div>
+              ) : (
+                t.response && <ResponseView response={t.response} onNextStep={send} />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <Composer onSend={send} disabled={sending} />
+    </div>
+  );
+}

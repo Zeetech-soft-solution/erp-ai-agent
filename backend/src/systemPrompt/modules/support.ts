@@ -1,0 +1,5 @@
+/**
+ * SUPPORT MODULE prompt section.
+ * Prompt text is not shipped in this distribution; provide your own.
+ */
+export const SUPPORT_MODULE = "";
