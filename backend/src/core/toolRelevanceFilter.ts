@@ -92,7 +92,17 @@ function toolMatchesBusinessModule(tool: ToolDefinition, businessModules: Set<st
  * cross-module guessing — if the keyword doesn't match, it's the model's
  * job to search.
  */
-const RELAY_SPINE_TOOLS = new Set(["tools.search", "data_table.list", "data_table.search_schema", "database_engine.execute_query"]);
+// report.find and analytics.catalog are entry points to named catalogues
+// (a user names a report or an analysis, not a tool), so they stay visible;
+// a name not registered in this deployment is simply never matched.
+const RELAY_SPINE_TOOLS = new Set([
+  "tools.search",
+  "data_table.list",
+  "data_table.search_schema",
+  "database_engine.execute_query",
+  "report.find",
+  "analytics.catalog",
+]);
 
 // Cross-module transaction pairs. When BOTH members keyword-match, also
 // offer the "transaction-side" module's entity tools — because the
@@ -126,18 +136,22 @@ export function relayModulesFor(prompt: string): Set<string> {
 }
 
 export function selectRelayTools(tools: ToolDefinition[], prompt: string): ToolDefinition[] {
-  const businessModules = relayModulesFor(prompt);
-
-  const picked = tools.filter((t) => {
-    if (RELAY_SPINE_TOOLS.has(t.name)) return true;
-    if (t.module === "context") return true;
-    if (businessModules.size && toolMatchesBusinessModule(t, businessModules)) return true;
-    return false; // discovery-only
+  // Spine and context tools are always offered. A keyword-matched module
+  // adds only its read tools (.list / .get); writes, reports, email and the
+  // rest of analytics are discovery-only through tools.search. An analytics
+  // keyword (chart, trend, sum ...) also offers the two charting tools, the
+  // only path that can draw a chart. relayModulesFor also drives
+  // buildSystemPrompt, so the tools offered and the prompt sections agree.
+  const modules = relayModulesFor(prompt);
+  const wantsCharts = detectExplicitModules(prompt).has("analytics");
+  return tools.filter((t) => {
+    if (RELAY_SPINE_TOOLS.has(t.name) || t.module === "context") return true;
+    if (wantsCharts && (t.name === "analytics.aggregate" || t.name === "chart.build")) return true;
+    if (modules.size > 0 && (t.name.endsWith(".list") || t.name.endsWith(".get")) && toolMatchesBusinessModule(t, modules)) {
+      return true;
+    }
+    return false;
   });
-
-  // A totally unmatched turn (greeting / vague) still gets the spine —
-  // never an empty list.
-  return picked.length ? picked : tools.filter((t) => RELAY_SPINE_TOOLS.has(t.name) || t.module === "context");
 }
 
 /**

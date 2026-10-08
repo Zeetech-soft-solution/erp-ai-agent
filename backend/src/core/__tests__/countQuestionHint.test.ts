@@ -36,9 +36,8 @@ describe("detectCountQuestionPhrase", () => {
     expect(detectCountQuestionPhrase("List quotations that haven't converted to a sales order.")).toBe(false);
   });
 
-  it("exports a hint that names the real tool to use", () => {
-    expect(COUNT_QUESTION_HINT).toContain("analytics.aggregate");
-    expect(COUNT_QUESTION_HINT).toContain('op:"count"');
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(COUNT_QUESTION_HINT).toBe("");
   });
 });
 
@@ -66,9 +65,8 @@ describe("detectRateQuestionPhrase", () => {
     expect(detectRateQuestionPhrase("How many quotations are open?")).toBe(false);
   });
 
-  it("exports a hint that names the real tool and warns against a bare count", () => {
-    expect(RATE_QUESTION_HINT).toContain("analytics.percentage");
-    expect(RATE_QUESTION_HINT).toMatch(/not the same as a lower rate/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(RATE_QUESTION_HINT).toBe("");
   });
 });
 
@@ -110,9 +108,8 @@ describe("detectGroupingQuestionPhrase", () => {
     expect(detectGroupingQuestionPhrase("break down sales by region")).toBe(true);
   });
 
-  it("exports a hint that names the real tool and warns against sampling/guessing", () => {
-    expect(GROUPING_QUESTION_HINT).toContain("groupBy");
-    expect(GROUPING_QUESTION_HINT).toMatch(/never happened to check/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(GROUPING_QUESTION_HINT).toBe("");
   });
 });
 
@@ -150,11 +147,8 @@ describe("detectSimpleChartPhrase", () => {
     expect(detectSimpleChartPhrase("List open quotations")).toBe(false);
   });
 
-  it("exports a hint that says exactly one *.list call, no analytics tool, and forbids the observed nonsense (summing an id field)", () => {
-    expect(SIMPLE_CHART_HINT).toMatch(/exactly ONCE/);
-    expect(SIMPLE_CHART_HINT).toMatch(/"render":"chart"/);
-    expect(SIMPLE_CHART_HINT).toMatch(/Do NOT call analytics\.aggregate/);
-    expect(SIMPLE_CHART_HINT).toMatch(/"id" field/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(SIMPLE_CHART_HINT).toBe("");
   });
 });
 
@@ -177,9 +171,8 @@ describe("detectChartToolPhrase", () => {
     expect(detectChartToolPhrase("Show this as a chart")).toBe(false);
   });
 
-  it("exports a hint that names the tool and the fetch-then-build sequence", () => {
-    expect(CHART_TOOL_HINT).toContain("chart.build");
-    expect(CHART_TOOL_HINT).toMatch(/analytics\.aggregate/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(CHART_TOOL_HINT).toBe("");
   });
 });
 
@@ -253,11 +246,8 @@ describe("detectDashboardQuestionPhrase", () => {
     expect(detectDashboardQuestionPhrase("What's our company name?")).toBe(false);
   });
 
-  it("exports a hint that names the real tool, requires a chart for trends, and forbids inventing benchmarks", () => {
-    expect(DASHBOARD_QUESTION_HINT).toContain("analytics.aggregate");
-    expect(DASHBOARD_QUESTION_HINT).toMatch(/not a dashboard/);
-    expect(DASHBOARD_QUESTION_HINT).toMatch(/"render":"chart"/);
-    expect(DASHBOARD_QUESTION_HINT).toMatch(/do not invent a number/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(DASHBOARD_QUESTION_HINT).toBe("");
   });
 });
 
@@ -283,10 +273,8 @@ describe("detectCorrelationQuestionPhrase", () => {
     expect(detectCorrelationQuestionPhrase("List open quotations")).toBe(false);
   });
 
-  it("exports a hint that names the real tool, requires paired per-record values, and forbids calling it growth", () => {
-    expect(CORRELATION_QUESTION_HINT).toContain("analytics.correlate");
-    expect(CORRELATION_QUESTION_HINT).toMatch(/PAIRED PER-RECORD/);
-    expect(CORRELATION_QUESTION_HINT).toMatch(/never use it here/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(CORRELATION_QUESTION_HINT).toBe("");
   });
 });
 
@@ -327,10 +315,7 @@ describe("detectFullReportPhrase", () => {
     expect(detectFullReportPhrase("list open quotations")).toBe(false);
   });
 
-  it("exports a hint that names report.generate, both source shapes, and forbids describing rows it doesn't have", () => {
-    expect(FULL_REPORT_HINT).toContain("report.generate");
-    expect(FULL_REPORT_HINT).toContain('source:"named_report"');
-    expect(FULL_REPORT_HINT).toContain('source:"entity_query"');
-    expect(FULL_REPORT_HINT).toMatch(/never attempt to describe, summarize, or list individual/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(FULL_REPORT_HINT).toBe("");
   });
 });

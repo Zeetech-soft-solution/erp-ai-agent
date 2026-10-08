@@ -56,11 +56,8 @@ export interface ToolSearchResult {
   note?: string;
 }
 
-const WRITE_REMINDER =
-  "This is a write action (create/update). Confirm with the user first — summarize what you're " +
-  "about to do in plain text, then end your reply with a DISPLAY_INTENT line using " +
-  '"render":"none" and a next_steps entry describing the action, so the user gets a clickable ' +
-  "confirm button. Only actually call this tool on the NEXT turn, after they confirm.";
+// Reminder text is not shipped in this distribution; provide your own.
+const WRITE_REMINDER = "";
 
 function getCanonicalModuleForTool(t: ToolDefinition): string {
   if (t.name.startsWith("analytics.") || t.name.startsWith("chart.")) return "analytics";
@@ -120,7 +117,7 @@ export function searchTools(candidates: ToolDefinition[], args: { query?: string
 
   const out: ToolSearchResult = { results };
   if (guardrails) out.guardrails = guardrails;
-  if (hasWriteAction) out.write_reminder = WRITE_REMINDER;
+  if (hasWriteAction && WRITE_REMINDER) out.write_reminder = WRITE_REMINDER;
   if (!matched.length) out.note = "No matching tool in your current access. Double-check the module/keyword, or this entity may genuinely be outside your role's access.";
   return out;
 }

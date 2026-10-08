@@ -152,15 +152,8 @@ export function detectSimpleChartPhrase(message: string): boolean {
   );
 }
 
-export const SIMPLE_CHART_HINT =
-  "This is a SIMPLE VISUALIZATION request for one entity — not a dashboard, not a specific chart type " +
-  "(pie/donut/line/bar), not a trend across periods. Call that entity's own *.list tool exactly ONCE " +
-  '(no analytics.aggregate/calculate call needed) and end your reply with DISPLAY_INTENT:{"render":"chart"} ' +
-  "— the auto-render already counts the returned records by whichever field looks like a real category " +
-  "(status, source, department, etc.) and draws the bars itself; there is no separate drawing step and " +
-  "nothing else to compute first. Do NOT call analytics.aggregate/calculate to manufacture a number for " +
-  'this — summing or averaging an "id" field, or computing "growth" across arbitrary time windows nobody ' +
-  "asked about, are not answers to a plain \"chart of X\"/\"X graph\" request.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const SIMPLE_CHART_HINT = "";
 
 export function detectCountQuestionPhrase(message: string): boolean {
   return COUNT_QUESTION_PATTERN.test(message);
@@ -178,49 +171,17 @@ export function detectGroupingQuestionPhrase(message: string): boolean {
   return GROUPING_QUESTION_PATTERN.test(message);
 }
 
-export const COUNT_QUESTION_HINT =
-  'This looks like a question about an exact count or total, possibly across more than one filter ' +
-  'or time period. Call analytics.aggregate with op:"count" (one call per period/filter needed) for ' +
-  "the real number. Do NOT count or estimate rows yourself from a *.list result — a list can be " +
-  "silently capped by its default page limit, and eyeballing a JSON array is not reliable.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const COUNT_QUESTION_HINT = "";
 
-export const RATE_QUESTION_HINT =
-  'This looks like a question about a RATE/PERCENTAGE, not a raw count — e.g. "pass rate" means ' +
-  '(passed / total), not just the number that passed. Call analytics.percentage (filters = the ' +
-  "matching condition, ofFilters = the base population) for the real proportion, one call per " +
-  "period if comparing. Do NOT answer with a bare count from analytics.aggregate/*.list and call " +
-  "that a rate — a smaller raw count from a smaller or shorter period is not the same as a lower rate. " +
-  'If comparing periods, the SAME date filter must appear in BOTH filters and ofFilters for each call ' +
-  '(e.g. both need {"date":{"op":"relative","value":"this_month"}}) — a matched count can never ' +
-  "legitimately exceed the total it's measured against.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const RATE_QUESTION_HINT = "";
 
-export const GROUPING_QUESTION_HINT =
-  'This looks like a question about WHICH entity has the most/least/highest/lowest of something, or a ' +
-  "breakdown by group. Do NOT try to answer this by sampling a few records and comparing them yourself — " +
-  "a group you never happened to check could be the real answer. Call analytics.aggregate with groupBy set " +
-  'to the relevant field (e.g. groupBy:"party" to break quotations down by customer) for an exact, complete ' +
-  "breakdown across every group in ONE call, then read off the largest/smallest value. The result's \"groups\" " +
-  'array holds real objects ({"key":..., "value":..., "count":...}) — when you mention more than one group ' +
-  "in your own reply, extract each group's key and value into plain words (e.g. \"Acme Corp: ₹120,000\"). " +
-  "NEVER write a group, or the whole result object, directly into your text — printing an object as text " +
-  'produces useless raw output like "[object Object]", not a real name or number. For 2+ groups, prefer ' +
-  'DISPLAY_INTENT {"render":"table"} so the full breakdown renders as a real table and your own reply can ' +
-  "stay to one short summary sentence (e.g. naming just the top result) instead of narrating every row.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const GROUPING_QUESTION_HINT = "";
 
-export const DASHBOARD_QUESTION_HINT =
-  "This looks like a request for a DASHBOARD or KPI summary, not a raw record listing — a real dashboard shows " +
-  "computed metrics and a trend, not a page of individual transactions. Do NOT just call <entity>.list and hand " +
-  "back the raw rows; that is a spreadsheet, not a dashboard. Instead: (1) get the real summary numbers with " +
-  'analytics.aggregate — total (op:"sum" on the relevant amount field), count (op:"count"), and average deal ' +
-  'size (op:"avg") — for the requested period, never estimate these by eyeballing a list; (2) if a trend across ' +
-  'multiple periods is implied (e.g. "last 6 months", "shaping up"), call analytics.aggregate once PER period ' +
-  "with the same date-scoped filters to build a real month-by-month (or week-by-week) series — one number per " +
-  'call, never a guess from scanning a combined list; (3) prefer DISPLAY_INTENT {"render":"chart"} for that ' +
-  "series so it renders as a real trend chart, with your own reply staying to a short sentence naming the " +
-  'headline numbers (e.g. "Revenue: ₹42L over 6 months, up 12% vs the prior 6"), not a wall of rows; (4) if the ' +
-  'request asks to compare against "industry"/"market"/"publicly available" benchmarks, you have no real ' +
-  "source for that figure — say so plainly in one sentence and do not invent a number to fill the gap, the same " +
-  "way you'd decline any other question with no real data behind it.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const DASHBOARD_QUESTION_HINT = "";
 
 // Confirmed live 2026-08-14, the SAME night analytics.correlate was added:
 // "is there a correlation between employee base salary and their total
@@ -271,30 +232,11 @@ export function detectChartToolPhrase(message: string): boolean {
   return CHART_TOOL_PATTERN.test(message);
 }
 
-export const CHART_TOOL_HINT =
-  'This asks for a SPECIFIC chart type (pie/donut/line) or MORE THAN ONE chart — the auto-rendered ' +
-  'DISPLAY_INTENT:{"render":"chart"} shortcut can only ever draw one count-by-category bar chart, so it ' +
-  "cannot do this; use the chart.build tool instead. Sequence matters: first fetch the REAL numbers this " +
-  'chart needs (analytics.aggregate with groupBy for a category breakdown, analytics.aggregate called once ' +
-  "per period for a trend, or analytics.calculate/correlate for a derived number) — never invent or estimate " +
-  "them — THEN call chart.build once, passing those exact values, with the type actually requested. For a " +
-  "reply that wants several distinct charts (e.g. a trend AND a breakdown), fetch each chart's own real " +
-  "numbers and call chart.build once PER chart — every chart.build call in this turn renders together as one " +
-  'combined reply automatically; do not emit a DISPLAY_INTENT line for this, the chart.build call(s) already ' +
-  "say everything needed. A pie/donut chart.build call takes exactly one series (its values become the " +
-  "slices) — never split one pie's categories across multiple calls.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const CHART_TOOL_HINT = "";
 
-export const CORRELATION_QUESTION_HINT =
-  'This is a CORRELATION question — "is X related to Y" — which is a fundamentally different shape from a ' +
-  "total/average/growth question, and needs analytics.correlate specifically, not analytics.aggregate or " +
-  'analytics.calculate\'s op:"growth" (growth means before/after change over TIME on ONE thing, not a ' +
-  "relationship between two different things — never use it here). Correlation requires PAIRED PER-RECORD " +
-  "values, never two separate aggregated totals: fetch the SAME set of records once via that entity's own " +
-  '.list tool with BOTH fields included, then build two arrays where valuesA[i] and valuesB[i] come from the ' +
-  "SAME record at the same index (e.g. 96 employees → 96 pairs of [that employee's base_salary, that SAME " +
-  'employee\'s ctc]) — then call analytics.correlate with those two paired arrays. Report the real ' +
-  'coefficient/direction/strength it returns; do not describe a relationship in prose without having actually ' +
-  "called this tool, and do not call a correlation a \"growth\" or \"change\" under any circumstances.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const CORRELATION_QUESTION_HINT = "";
 
 // "export the sales register" / "download the customer list" / "get me a
 // PDF of all quotations" — EXPLICIT file-download intent, needing
@@ -332,15 +274,5 @@ export function detectFullReportPhrase(message: string): boolean {
   return FULL_REPORT_PATTERN.test(message);
 }
 
-export const FULL_REPORT_HINT =
-  "This looks like an EXPLICIT request for a file — an export, download, or PDF — not a few rows to discuss " +
-  "in chat. Use the report.generate tool instead of a *.list or *.report.* tool: pass " +
-  'source:"named_report" + reportKey for a predefined ERPNext report (profit_and_loss, general_ledger, ' +
-  'stock_balance, etc. — same reportKey values the *.report.* tools use), or source:"entity_query" + ' +
-  "entityKey for a full list of any entity, optionally with filters. report.generate returns ONLY a " +
-  "download link and a row count — it never returns the actual rows, by design, so large datasets never " +
-  'enter this conversation\'s context. Your reply should name the row count and the download link (e.g. ' +
-  '"Here are all 1,134 quotations: [link]") — never attempt to describe, summarize, or list individual ' +
-  "rows from a report.generate result, because you do not have access to them. This hint does NOT apply to " +
-  'an ordinary "show me"/"list"/"give me all X" request with no explicit export/download/PDF wording — that ' +
-  "stays a normal *.list call with its usual paging, exactly as before.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const FULL_REPORT_HINT = "";

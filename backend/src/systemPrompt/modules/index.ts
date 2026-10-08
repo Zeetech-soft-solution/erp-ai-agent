@@ -44,11 +44,11 @@ export { ANALYTICS_MODULE } from "./analytics";
  * that a padded-substring match could never have covered either way.
  */
 export const MODULE_KEYWORDS: Record<string, string[]> = {
-  selling: ["quotation", "sales order", "sales_order", "opportunity", "lead", "sell", "sale", "customer order", "quote", "sales invoice", "delivery note"],
-  buying: ["purchase order", "purchase_order", "rfq", "request for quotation", "supplier", "vendor", "buy", "procurement", "material request", "purchase invoice", "purchase receipt", "supplier quotation"],
-  stock: ["stock", "inventory", "warehouse", "bin", "movement", "transfer", "item", "items", "stock entry", "stock balance", "reorder", "quantity", "available stock"],
-  accounting: ["accounting", "finance", "invoice", "payment", "journal", "journal entry", "gl", "gl entry", "p&l", "profit", "loss", "balance sheet", "outstanding", "receivable", "payable", "bank", "cash", "financial", "tax", "gst"],
-  hr: ["employee", "employees", "leave", "attendance", "salary", "payroll", "expense claim", "hiring", "recruitment", "timesheet", "absent", "hr"],
+  selling: ["quotation", "sales order", "sales_order", "opportunity", "lead", "sell", "sale", "customer order", "quote", "sales invoice", "delivery note", "sales analytics", "sales register", "sales trends"],
+  buying: ["purchase order", "purchase_order", "rfq", "request for quotation", "supplier", "vendor", "buy", "procurement", "material request", "purchase invoice", "purchase receipt", "supplier quotation", "purchase analytics", "purchase register"],
+  stock: ["stock", "inventory", "warehouse", "bin", "movement", "transfer", "item", "items", "stock entry", "stock balance", "stock ledger", "stock ageing", "stock aging", "stock analytics", "reorder", "quantity", "available stock"],
+  accounting: ["accounting", "finance", "invoice", "payment", "journal", "journal entry", "gl", "gl entry", "ledger", "p&l", "profit", "loss", "balance sheet", "trial balance", "financial statement", "cash flow", "outstanding", "receivable", "payable", "aging", "ageing", "bank", "cash", "financial", "tax", "gst"],
+  hr: ["employee", "employees", "leave", "attendance", "salary", "salary register", "payroll", "expense claim", "hiring", "recruitment", "timesheet", "absent", "hr"],
   manufacturing: ["work order", "work_order", "bom", "bill of materials", "production", "manufacturing", "assembly", "routing", "operation", "produce"],
   crm: ["crm", "lead", "opportunity", "customer", "contact", "communication", "call", "meeting", "address", "customer relationship"],
   projects: ["project", "task", "milestone", "timeline", "gantt", "project management", "deliverable", "progress", "time log"],

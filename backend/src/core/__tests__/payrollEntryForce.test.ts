@@ -52,8 +52,7 @@ describe("buildForcedPayrollEntryListArgs", () => {
 });
 
 describe("PAYROLL_ENTRY_FORCED_HINT", () => {
-  it("names the real tool and tells the model not to re-call it or deny access", () => {
-    expect(PAYROLL_ENTRY_FORCED_HINT).toContain(PAYROLL_ENTRY_TOOL);
-    expect(PAYROLL_ENTRY_FORCED_HINT).toMatch(/do not claim you lack access/i);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(PAYROLL_ENTRY_FORCED_HINT).toBe("");
   });
 });

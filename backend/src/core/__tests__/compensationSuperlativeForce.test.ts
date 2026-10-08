@@ -59,9 +59,7 @@ describe("buildForcedCompensationListArgs", () => {
 });
 
 describe("COMPENSATION_SUPERLATIVE_FORCED_HINT", () => {
-  it("names the real tool and warns off the known-wrong path", () => {
-    expect(COMPENSATION_SUPERLATIVE_FORCED_HINT).toContain(COMPENSATION_SUPERLATIVE_TOOL);
-    expect(COMPENSATION_SUPERLATIVE_FORCED_HINT).toMatch(/analytics\.aggregate/);
-    expect(COMPENSATION_SUPERLATIVE_FORCED_HINT).toMatch(/no salary\/ctc\/net_pay field/);
+  it("ships its hint text empty (provide your own in this file)", () => {
+    expect(COMPENSATION_SUPERLATIVE_FORCED_HINT).toBe("");
   });
 });

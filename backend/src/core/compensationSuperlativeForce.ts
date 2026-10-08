@@ -72,10 +72,5 @@ export function buildForcedCompensationListArgs(direction: "highest" | "lowest")
   return { sortBy: "ctc", sortDir: direction === "highest" ? "desc" : "asc", limit: 5 };
 }
 
-export const COMPENSATION_SUPERLATIVE_FORCED_HINT =
-  `Real compensation data has already been fetched for you via ${COMPENSATION_SUPERLATIVE_TOOL} ` +
-  `(sorted by ctc — see the tool result already in this conversation) specifically because this looks like a ` +
-  `compensation-ranking question. Use that real data directly to answer. Do NOT call analytics.aggregate against ` +
-  `"employee" for this (it has no salary/ctc/net_pay field at all) and do NOT call salary_structure_assignment.list ` +
-  `again — it would just repeat the same result. If you need a name/department for a specific row, call ` +
-  "employee.get on that row's own \"employee\" id only.";
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const COMPENSATION_SUPERLATIVE_FORCED_HINT = "";

@@ -53,7 +53,7 @@ export const THIN_CORE = [
   CRITICAL_PRINCIPLES,
   TOOL_DISCOVERY, // the "when to call what" routing map — always
   DISPLAY_INSTRUCTIONS,
-].join("\n\n");
+].filter(Boolean).join("\n\n");
 
 // Kept as the FULL join for the no-keyword-match fallback (never strip
 // below what works on a genuinely vague turn) and for existing imports.
@@ -66,7 +66,7 @@ export const CORE_SYSTEM_PROMPT = [
   DISPLAY_INSTRUCTIONS,
   SCANNED_DOCUMENT_RULES,
   INBOX_RULES,
-].join("\n\n");
+].filter(Boolean).join("\n\n");
 
 // ============================================
 // MODULE PROMPT SECTIONS — the 11 real ERP domains + "analytics".
@@ -156,5 +156,6 @@ export function buildSystemPrompt(prompt: string, canWrite: boolean, identity: A
   }
 
   sections.push(buildUserContext(identity, frappeUser, frappeRoles));
-  return sections.join("\n\n");
+  // Blocks left empty (the shipped default) contribute nothing.
+  return sections.filter(Boolean).join("\n\n");
 }

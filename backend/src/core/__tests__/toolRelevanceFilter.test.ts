@@ -130,12 +130,12 @@ describe("selectRelayTools — dumb: spine + keyword-matched module entities, ev
     expect(names.sort()).toEqual(["data_table.list", "data_table.search_schema", "database_engine.execute_query", "tools.search"].sort());
   });
 
-  it("analytics/chart keyword does NOT pull in analytics tools (discovery-only now)", () => {
+  it("an analytics keyword loads analytics.aggregate and chart.build for the turn", () => {
     const names = new Set(selectRelayTools(catalog, "show me a sales chart with a trend line").map((t) => t.name));
-    expect(names.has("analytics.aggregate")).toBe(false);
-    expect(names.has("chart.build")).toBe(false);
+    expect(names.has("analytics.aggregate")).toBe(true);
+    expect(names.has("chart.build")).toBe(true);
     expect(names.has("sel0.list")).toBe(true); // "sales" still matches selling
-    expect(names.has("tools.search")).toBe(true); // model discovers analytics from here
+    expect(names.has("tools.search")).toBe(true);
   });
 });
 

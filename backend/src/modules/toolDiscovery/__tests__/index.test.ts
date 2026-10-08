@@ -57,12 +57,9 @@ describe("searchTools", () => {
     expect(allNames).not.toContain("tools.search");
   });
 
-  it("attaches a write_reminder only when a create/update tool is among the matches", () => {
-    const readOnly = searchTools(CANDIDATES, { module: "hr" });
-    expect(readOnly.write_reminder).toBeUndefined();
-
-    const withWrite = searchTools(CANDIDATES, { module: "selling", query: "create" });
-    expect(withWrite.write_reminder).toMatch(/confirm/i);
+  it("attaches no write_reminder while its text is empty (the shipped default)", () => {
+    expect(searchTools(CANDIDATES, { module: "hr" }).write_reminder).toBeUndefined();
+    expect(searchTools(CANDIDATES, { module: "selling", query: "create" }).write_reminder).toBeUndefined();
   });
 
   it("draws module guardrail text from MODULE_PROMPT_SECTIONS (empty in this distribution, so omitted)", () => {

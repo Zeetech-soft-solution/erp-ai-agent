@@ -58,8 +58,5 @@ export function buildForcedPayrollEntryListArgs(): { sortBy: string; sortDir: "a
   return { sortBy: "end_date", sortDir: "desc", limit: 100 };
 }
 
-export const PAYROLL_ENTRY_FORCED_HINT =
-  `Real payroll run data has already been fetched for you via ${PAYROLL_ENTRY_TOOL} (sorted by end_date, most ` +
-  `recent first — see the tool result already in this conversation) specifically because this looks like a ` +
-  `payroll-entry question. Use that real data directly to answer — do NOT call ${PAYROLL_ENTRY_TOOL} again, it ` +
-  `would just repeat the same result, and do NOT claim you lack access to it (you clearly just used it).`;
+// Hint text is not shipped in this distribution; provide your own (see systemPrompt/core/hints.ts).
+export const PAYROLL_ENTRY_FORCED_HINT = "";
