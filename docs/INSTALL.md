@@ -182,6 +182,42 @@ in `core/`, `modules/`, or either frontend needs to change; that's a Pro-tier cu
 connector engagement, not something this repo ships pre-built. Reach out to
 **support@noviz.in** if that's what you need.
 
+### 3c. Knowledge base and Python analytics (optional)
+
+**Knowledge base (RAG).** Documents in `backend/knowledge/**/*.md` teach the agent how
+processes work (one sample, `knowledge/erpnext/document-lifecycle.md`, ships with the repo;
+`knowledge/README.md` describes the format). They are embedded into the same pgvector
+store as policy documents. Migration `016_knowledge.sql` creates the table; then:
+
+```bash
+cd backend
+npm run knowledge:index            # new or changed files only
+npm run knowledge:index -- --force # re-embed everything
+```
+
+Administrators can also call `POST /api/admin/knowledge/reindex`, list documents with
+`GET /api/admin/knowledge`, and try retrieval with `POST /api/admin/knowledge/search`
+(`{ "query": "what happens when a sales invoice is submitted" }`). Add `knowledge` to
+`ACTIVE_MODULES` to give the agent the `knowledge.search` and `workflow.describe` tools.
+
+**Python analytics engine.** `backend/analytics/*.py` are named analyses run as a child
+process (rows in on stdin, JSON out). The sample, `monthly_trend.py`, needs pandas and numpy:
+
+```bash
+pip install -r backend/analytics/requirements.txt
+# .env
+PYTHON_BIN=python3        # or the full path to a virtualenv's python
+```
+
+Add `trends` to `ACTIVE_MODULES` to give the agent the `analytics.monthly_trend` tool.
+You can try the analysis on its own:
+
+```bash
+echo '{"rows":[{"date":"2026-01-05","total":100},{"date":"2026-02-03","total":200}]}'   | python3 backend/analytics/monthly_trend.py
+```
+
+The Docker image installs Python, pandas and numpy and copies both folders.
+
 ## Step 4 — Install the admin console
 
 ```bash

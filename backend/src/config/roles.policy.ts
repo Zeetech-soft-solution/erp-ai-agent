@@ -980,7 +980,10 @@ const COMMON_INBOX_TOOLS = ["communication.list", "communication.get", "communic
 // tool list (gateway.ts's listAllowedTools()) and returns a subset of
 // it, never a second access boundary — so every real role should have
 // it, unconditionally.
-const COMMON_META_TOOLS = ["tools.search"];
+// knowledge.search reads only the shipped process documents (no business
+// data); workflow.describe reads a document through the person's own
+// credential, so ERPNext's DocPerm still decides what they can see.
+const COMMON_META_TOOLS = ["tools.search", "knowledge.search", "workflow.describe"];
 // Real, explicit product ask (2026-08-20): "everything gap filled" —
 // data_table.search_schema (renamed from schema.search the same
 // session) is, same as analytics.aggregate/tools.search above, never a
@@ -999,7 +1002,10 @@ const COMMON_META_TOOLS = ["tools.search"];
 // explicit per-role grant above (predates this shared-append pattern);
 // adding it a second time here would be a harmless but confusing
 // duplicate.
-const COMMON_UTILITY_TOOLS = ["data_table.list", "data_table.search_schema", "database_engine.execute_query"];
+// analytics.monthly_trend (modules/trends) fetches through the same
+// person-scoped connector list(), so ERPNext still decides which rows the
+// analysis sees; same reasoning as database_engine.execute_query.
+const COMMON_UTILITY_TOOLS = ["data_table.list", "data_table.search_schema", "database_engine.execute_query", "analytics.monthly_trend"];
 for (const role of Object.keys(ROLE_TOOL_MAP)) {
   if (ROLE_TOOL_MAP[role].includes("*")) continue;
   ROLE_TOOL_MAP[role] = [...ROLE_TOOL_MAP[role], ...COMMON_INBOX_TOOLS, ...COMMON_META_TOOLS, ...COMMON_UTILITY_TOOLS];

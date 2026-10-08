@@ -8,6 +8,7 @@ import toolsRoutes from "./routes/tools.routes";
 import agentRoutes from "./routes/agent.routes";
 import adminRoutes from "./routes/admin.routes";
 import policyDocumentsRoutes from "./routes/policyDocuments.routes";
+import knowledgeRoutes from "./routes/knowledge.routes";
 import webhooksRoutes from "./routes/webhooks.routes";
 import { startErpnextNotificationPoll } from "./core/erpnextNotificationSync";
 
@@ -34,6 +35,7 @@ app.use("/api/tools", toolsRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/policy-documents", policyDocumentsRoutes);
+app.use("/api/admin/knowledge", knowledgeRoutes);
 app.use("/api/webhooks", webhooksRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));

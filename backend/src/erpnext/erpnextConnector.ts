@@ -8,6 +8,7 @@ import { DOCUMENT_LINK_MAP } from "./documentLinkMap";
 import { resolveRelativePeriod } from "../core/relativePeriods";
 import { computeStatsOp, StatsOp } from "../core/statsCalculator";
 import { settingsService } from "../core/settingsService";
+import { describeWorkflow } from "./workflow";
 
 /**
  * ERPNext's implementation of the ERP-agnostic connector contract.
@@ -879,6 +880,12 @@ export class ErpNextConnector implements SystemConnector {
    *  this mutation through a privileged whitelisted function instead,
    *  scoped to the CALLING user's own for_user rows) — a plain
    *  update_doc-style PUT would 403 for a real, ordinary user. */
+  async describeWorkflow(entityKey: string, credential: UserCredential, id?: string): Promise<any> {
+    const mapping = ERPNEXT_ENTITY_MAP[entityKey];
+    if (!mapping) throw new Error(`Unknown entity "${entityKey}"`);
+    return describeWorkflow(mapping.doctype, this.clientFor(credential, undefined, { read: true }), id);
+  }
+
   async markNotificationRead(credential: UserCredential, notificationId: string): Promise<any> {
     const client = this.clientFor(credential);
     await client.post("/api/method/frappe.desk.doctype.notification_log.notification_log.mark_as_read", { docname: notificationId });

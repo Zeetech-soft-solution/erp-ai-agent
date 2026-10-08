@@ -48,7 +48,7 @@ function hardWrap(paragraph: string): string[] {
   return pieces;
 }
 
-function chunkText(text: string): string[] {
+export function chunkText(text: string): string[] {
   const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).flatMap(hardWrap);
   const chunks: string[] = [];
   let current = "";

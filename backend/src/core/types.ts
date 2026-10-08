@@ -419,6 +419,12 @@ export interface SystemConnector {
    *  modules/inboxActions/index.ts's own tool description for why this
    *  is a dedicated action rather than a generic update_doc. */
   markNotificationRead(credential: UserCredential, notificationId: string): Promise<any>;
+
+  /** Optional. The system's own approval workflow for an entity (states,
+   *  transitions, who may act), and for one record its current state and
+   *  the actions this person may take now, read from the system itself.
+   *  Connectors without a workflow concept leave it out. */
+  describeWorkflow?(entityKey: string, credential: UserCredential, id?: string): Promise<any>;
 }
 
 // ---- Report config — the ERP-agnostic description of a named report,

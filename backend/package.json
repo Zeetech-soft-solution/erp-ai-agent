@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "knowledge:index": "ts-node-dev --transpile-only src/scripts/indexKnowledge.ts"
   },
   "dependencies": {
     "axios": "^1.7.2",

@@ -46,6 +46,15 @@ Real agent output, signed in against a live ERPNext instance:
 - **System prompt** (`backend/src/systemPrompt/`) — a thin always-on core plus
   per-domain guidance selected by keyword, plus per-tool rule blocks attached to the
   tools that need them.
+- **Knowledge base (RAG)** (`backend/knowledge/`, `core/knowledgeStore.ts`,
+  `modules/knowledge/`) — process documents chunked by section, embedded into pgvector,
+  surfaced automatically as context and on demand through `knowledge.search`;
+  `workflow.describe` reads the organisation's live ERPNext approval workflow (states,
+  transitions, and the actions open to the signed-in user right now).
+- **Python analytics engine** (`backend/analytics/`, `core/pythonAnalysis.ts`,
+  `modules/trends/`) — named pandas analyses run as a child process; the sample
+  `monthly_trend.py` returns KPIs, a chart and observations. Rows go to Python, never
+  to the model.
 - **Two React apps** (`frontend/agent`, `frontend/admin`) — the chat UI and the
   operational-settings console.
 - **Per-user impersonation** — every business-data call runs on ERPNext as the actual

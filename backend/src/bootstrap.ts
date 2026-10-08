@@ -13,6 +13,8 @@ import { inboxActionsModule } from "./modules/inboxActions";
 import { toolDiscoveryModule } from "./modules/toolDiscovery";
 import { schemaModule } from "./modules/schema";
 import { dataServerModule } from "./modules/dataServer";
+import { knowledgeModule } from "./modules/knowledge";
+import { trendsModule } from "./modules/trends";
 import { buildEntityModules } from "./core/entityModuleFactory";
 import { ENTITY_CONFIGS } from "./config/entities.config";
 import { buildWorkflowModules } from "./core/workflowToolFactory";
@@ -23,7 +25,7 @@ import { REPORT_CONFIGS } from "./config/reports.config";
 import { businessRuleEngine } from "./core/businessRuleEngine";
 import { RULE_CONFIGS } from "./config/rules.config";
 import { vectorContextProvider } from "./providers/context/vectorContextProvider";
-import { OpenAIEmbedder } from "./providers/embeddings/openaiEmbedder";
+import { embedder } from "./embedder";
 import "./renderers/tableRenderer"; // side-effect: registers renderers
 import "./renderers/cardsRenderer"; // side-effect: registers the "cards" renderer
 import "./renderers/chartRenderer"; // side-effect: registers the "chart" renderer
@@ -49,6 +51,8 @@ const AVAILABLE_MODULES: Record<string, any> = {
   inbox_actions: inboxActionsModule,
   schema_search: schemaModule,
   data_server: dataServerModule,
+  knowledge: knowledgeModule,
+  trends: trendsModule,
 };
 
 // Shared with core/policyDocumentStore.ts so admin-uploaded policy
@@ -56,7 +60,7 @@ const AVAILABLE_MODULES: Record<string, any> = {
 // against. Safe no-op (null) without EMBEDDINGS_API_KEY/LLM_API_KEY —
 // same "no-op until configured" discipline as every other DB-backed
 // service here.
-export const embedder = appConfig.embeddings.apiKey ? new OpenAIEmbedder() : null;
+export { embedder };
 
 // "entities"/"workflows"/"reports" are deliberately not real entries here —
 // they're sentinel values the loop below skips before ever reaching the
