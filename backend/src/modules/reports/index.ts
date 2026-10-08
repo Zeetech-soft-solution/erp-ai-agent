@@ -1,6 +1,7 @@
 import { MCPModule } from "../../core/types";
 import { REPORT_CONFIGS } from "../../config/reports.config";
 import { ENTITY_CONFIGS } from "../../config/entities.config";
+import { REPORT_RULES } from "../../systemPrompt/core/reports";
 
 /**
  * Same discipline as modules/documents/index.ts's document.get_pdf, one
@@ -54,6 +55,7 @@ Never use .list for "all" data. Use this instead. Returns download link only.`,
         },
         required: ["source"],
       },
+      promptRules: [REPORT_RULES],
       handler: async (args) => {
         const source = args?.source;
         if (source === "named_report") {
