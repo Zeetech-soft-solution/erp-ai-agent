@@ -6,9 +6,7 @@ and the analytics tools), granted to the **Sales User** role — see `config/rol
 for the exact tool list and `docs/ARCHITECTURE.md` for how it's built.
 
 These assume you're signed in against a real, connected ERPNext instance (Step 3 of
-`docs/INSTALL.md`) — the agent always answers from your live data, not from the static
-`sample-data/crm-sample-data.json` snapshot (see that file's own note for what it's for
-instead).
+`docs/INSTALL.md`) — the agent always answers from your live data.
 
 ## Listing and lookup
 

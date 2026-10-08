@@ -15,8 +15,7 @@ guide is just enough to get the whole thing running end to end.
 - Postgres 14+ with `CREATE EXTENSION vector;` permission
 - An OpenAI API key (or another OpenAI-compatible endpoint + key)
 - One ERPNext user with role **Sales User**, and a few test Lead/
-  Opportunity records so there's something to see (see
-  `sample-data/crm-sample-data.json` for the shape)
+  Opportunity records so there's something to see
 
 ## 2. Database
 

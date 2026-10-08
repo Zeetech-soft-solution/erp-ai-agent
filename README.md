@@ -14,7 +14,7 @@ It connects **directly** to your own ERP instance and runs as a single deploymen
 one organization. There is no relay, no multi-tenant layer, no subscription — a
 separately-licensed hosted SaaS build adds those on top of this same engine.
 
-Sample data and prompts: `sample-data/`, `docs/SAMPLE_PROMPTS.md`.
+Sample prompts: `docs/SAMPLE_PROMPTS.md`.
 
 ## Screenshots
 
@@ -84,7 +84,6 @@ frontend/
   admin/       Admin console (Vite + React)
   agent/       End-user chat/agent UI (Vite + React)
 docs/          Architecture, install guide, testing guide, sample prompts, training plan
-sample-data/   A real, small data snapshot — see sample-data/README.md
 ```
 
 ## Getting started

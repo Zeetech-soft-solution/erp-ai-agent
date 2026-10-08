@@ -140,10 +140,7 @@ self-host.
 Once you have an instance, either enter a handful of test records by hand — a **Sales
 User** and a few **Lead**/**Opportunity** records is enough to exercise this tier's CRM
 module (see [Step 6](#step-6-test-with-a-demo-install)) — or import ERPNext's own demo
-data if your version ships one, as a faster starting point. `sample-data/crm-sample-data.json`
-in this repo is a small, real snapshot (leads, opportunities, customers, territories) from
-this project's own reference demo company, useful as a concrete example of the shape/volume
-of data worth entering — not something this repo imports for you automatically.
+data if your version ships one, as a faster starting point.
 
 **Backing up and restoring** the ERPNext data you build up (so a bad experiment or a
 version upgrade doesn't cost you your test data) uses ERPNext's own `bench` tooling —
@@ -250,8 +247,7 @@ This confirms the whole stack — backend, database, admin console, agent app, a
 completed Step 3) ERPNext — actually works end to end.
 
 1. In ERPNext, create one user with the **Sales User** role, and a few **Lead**/
-   **Opportunity** records so there's something for the agent to find (see
-   `sample-data/crm-sample-data.json` for the shape of real records this module works with).
+   **Opportunity** records so there's something for the agent to find.
 2. Sign in to the agent app (`:5174`) as that user.
 3. Ask it things like **"show me our leads"**, **"how many open leads do we have"**, or
    **"break down opportunity value by territory."** You should get real answers and a
