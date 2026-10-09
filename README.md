@@ -24,6 +24,8 @@ Real agent output, signed in against a live ERPNext instance:
 |---|---|
 | ![Outstanding customer invoice aging report, listing overdue customers with amounts and days overdue](docs/screenshots/accounting-aging-report.jpg) | ![A composed sales dashboard: a pie chart of quotations by status, a bar chart of sales orders by status, and a line chart of monthly sales invoice totals, all generated from one request](docs/screenshots/pro-chart-dashboard.jpg) |
 
+📘 **Guide:** [How to build an enterprise AI agent](https://noviz.in/how-to-build-enterprise-ai-agent.html) — the full architecture this agent implements: connectors, tools, permissions, tool selection, prompt layers, RAG, the analytics engine, workflows and production operations, with code from this repository.
+
 📝 **Write-up:** [AI Agents in the Enterprise: Building Smarter ERP Dashboards with Purpose-Built Tools](https://dev.to/tajdin_k_27861e95a3d49baa/-1k1) — the architecture behind the dashboard screenshot: fetch/shape/render as three separate, composable tools instead of one model call doing everything.
 
 ## What's in the box
